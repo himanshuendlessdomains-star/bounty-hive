@@ -1,51 +1,25 @@
-import { TonConnectUI } from '@tonconnect/ui-react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { TonConnectUIProvider, useTonAddress } from '@tonconnect/ui-react';
 import { useWalletStore } from '../stores/walletStore';
-import { getTonConnectUI } from '../contracts/tonConnect';
 
-interface TonContextType {
-  tonConnectUI: TonConnectUI | null;
-}
-
-const TonContext = createContext<TonContextType>({ tonConnectUI: null });
-
-export function TonProvider({ children }: { children: React.ReactNode }) {
-  const [connector, setConnector] = useState<TonConnectUI | null>(null);
+function WalletStateSync() {
+  const address = useTonAddress();
   const { setAddress, setConnected, setBalance } = useWalletStore();
 
   useEffect(() => {
-    const ui = getTonConnectUI();
-    setConnector(ui);
+    setAddress(address || null);
+    setConnected(!!address);
+    if (!address) setBalance('0');
+  }, [address, setAddress, setConnected, setBalance]);
 
-    // Restore connection
-    ui.onStatusChange((wallet) => {
-      if (wallet) {
-        setAddress(wallet.account.address);
-        setConnected(true);
-      } else {
-        setAddress(null);
-        setConnected(false);
-        setBalance('0');
-      }
-    });
-
-    // Check if already connected
-    if (ui.connected) {
-      const wallet = ui.wallet;
-      if (wallet) {
-        setAddress(wallet.account.address);
-        setConnected(true);
-      }
-    }
-  }, [setAddress, setConnected, setBalance]);
-
-  return (
-    <TonContext.Provider value={{ tonConnectUI: connector }}>
-      {children}
-    </TonContext.Provider>
-  );
+  return null;
 }
 
-export function useTonContext() {
-  return useContext(TonContext);
+export function TonProvider({ children }: { children: ReactNode }) {
+  return (
+    <TonConnectUIProvider manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}>
+      <WalletStateSync />
+      {children}
+    </TonConnectUIProvider>
+  );
 }

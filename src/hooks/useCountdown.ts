@@ -1,36 +1,25 @@
 import { useState, useEffect } from 'react';
 
-export function useCountdown(endTime: string) {
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isExpired: false,
-  });
+export function useCountdown(targetDate: Date | number) {
+  const targetMs = typeof targetDate === 'number' ? targetDate : targetDate.getTime();
+
+  const [timeLeft, setTimeLeft] = useState(targetMs - Date.now());
 
   useEffect(() => {
-    const end = new Date(endTime).getTime();
-
     const tick = () => {
-      const now = Date.now();
-      const diff = end - now;
-
-      if (diff <= 0) {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isExpired: true });
-        return;
-      }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft({ hours, minutes, seconds, isExpired: false });
+      const remaining = targetMs - Date.now();
+      setTimeLeft(remaining);
     };
 
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [endTime]);
+  }, [targetMs]);
 
-  return timeLeft;
+  const isExpired = timeLeft <= 0;
+  const hours = Math.max(0, Math.floor(timeLeft / 3600000));
+  const minutes = Math.max(0, Math.floor((timeLeft % 3600000) / 60000));
+  const seconds = Math.max(0, Math.floor((timeLeft % 60000) / 1000));
+
+  return { timeLeft, isExpired, hours, minutes, seconds };
 }

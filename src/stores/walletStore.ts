@@ -1,27 +1,40 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface WalletState {
   address: string | null;
-  balance: string; // TON balance
-  isConnected: boolean;
-  isLoading: boolean;
+  balance: string;
+  connected: boolean;
+  connecting: boolean;
 
   setAddress: (address: string | null) => void;
   setBalance: (balance: string) => void;
   setConnected: (connected: boolean) => void;
-  setLoading: (loading: boolean) => void;
-  disconnect: () => void;
+  setConnecting: (connecting: boolean) => void;
+  reset: () => void;
 }
 
-export const useWalletStore = create<WalletState>((set) => ({
+const initialState = {
   address: null,
   balance: '0',
-  isConnected: false,
-  isLoading: false,
+  connected: false,
+  connecting: false,
+};
 
-  setAddress: (address) => set({ address, isConnected: !!address }),
-  setBalance: (balance) => set({ balance }),
-  setConnected: (isConnected) => set({ isConnected }),
-  setLoading: (isLoading) => set({ isLoading }),
-  disconnect: () => set({ address: null, balance: '0', isConnected: false }),
-}));
+export const useWalletStore = create<WalletState>()(
+  persist(
+    (set) => ({
+      ...initialState,
+
+      setAddress: (address) => set({ address }),
+      setBalance: (balance) => set({ balance }),
+      setConnected: (connected) => set({ connected }),
+      setConnecting: (connecting) => set({ connecting }),
+      reset: () => set(initialState),
+    }),
+    {
+      name: 'bounty-hive-wallet',
+      partialize: (state) => ({ address: state.address, connected: state.connected }),
+    }
+  )
+);

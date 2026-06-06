@@ -1,47 +1,72 @@
+// ─── Bounty Types ─────────────────────────────────────────────────────────────
+
 export type BountyType = 'task' | 'quiz' | 'creative';
-
 export type WinnerSelection = 'draw' | 'manual';
-
 export type VerificationMethod = 'manual' | 'auto';
-
-export type BountyStatus =
-  | 'draft'
-  | 'active'
-  | 'review'
-  | 'completed'
-  | 'cancelled';
+export type BountyStatus = 'active' | 'review' | 'completed' | 'cancelled';
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Bounty {
   id: string;
+  escrowAddress?: string;
   title: string;
   description: string;
   type: BountyType;
-  poolAmount: string; // TON amount as string
-  poolUsd: string; // USD equivalent
+  poolAmount: string;
+  poolUsd: string;
   winnerCount: number;
-  perWinnerAmount: string; // TON
-  perWinnerUsd: string; // USD
+  perWinnerAmount: string;
+  perWinnerUsd: string;
   winnerSelection: WinnerSelection;
   verification: VerificationMethod;
-  verificationRule?: string; // for auto verification
-  duration: 24; // always 24 hours
+  verificationRule: string;
   status: BountyStatus;
-  createdAt: string;
-  endsAt: string;
+  duration: number;
+  platformFeeBps: number;
   ownerId: string;
-  ownerName: string;
   submissions: Submission[];
-  escrowAddress?: string;
+  winners?: Winner[];
+  endsAt: number;
+  reviewEndsAt?: number;
+  completedAt?: number;
+  createdAt?: string;
+  owner?: {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 export interface Submission {
   id: string;
   bountyId: string;
   userId: string;
-  userName: string;
-  proof: string; // screenshot URL, link, etc.
+  proofUrl: string;
+  status: SubmissionStatus;
   submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
+  reviewedAt: string | null;
+  user?: {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
+}
+
+export interface Winner {
+  id: string;
+  bountyId: string;
+  userId: string;
+  payoutAmount: string;
+  payoutTxHash: string | null;
+  paidAt: string | null;
+  user?: {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 export interface CreateBountyPayload {
@@ -53,4 +78,52 @@ export interface CreateBountyPayload {
   winnerSelection: WinnerSelection;
   verification: VerificationMethod;
   verificationRule?: string;
+  escrowAddress?: string;
+  ownerId: string;
 }
+
+// ─── Swap Types ────────────────────────────────────────────────────────────────
+
+export interface TokenAsset {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  image?: string;
+  priceUsd?: number;
+}
+
+export interface SwapQuote {
+  offerAddress: string;
+  askAddress: string;
+  offerUnits: string;
+  minAskUnits: string;
+  priceImpact: string;
+  routerAddress: string;
+  provider: 'stonfi' | 'omniston';
+}
+
+export interface SwapRoute {
+  quote: SwapQuote;
+  txParams: {
+    to: string;
+    value: string;
+    body?: string;
+  };
+}
+
+// ─── UI Types ─────────────────────────────────────────────────────────────────
+
+export interface CreateBountyStep {
+  id: number;
+  title: string;
+  description: string;
+}
+
+export const CREATE_BOUNTY_STEPS: CreateBountyStep[] = [
+  { id: 1, title: 'Title & Type', description: 'Name your bounty and pick a category' },
+  { id: 2, title: 'Description', description: 'Tell hunters what to do' },
+  { id: 3, title: 'Pool & Winners', description: 'Set the reward and how many win' },
+  { id: 4, title: 'Selection & Verification', description: 'Draw or manual? Auto or manual review?' },
+  { id: 5, title: 'Review & Launch', description: 'Confirm everything and go live' },
+];

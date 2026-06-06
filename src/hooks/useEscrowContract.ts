@@ -1,111 +1,163 @@
 import { useState, useCallback } from 'react';
-import { useWalletStore } from '../stores/walletStore';
-import {
-  submitProof,
-  approveSubmission,
-  rejectSubmission,
-  selectWinners,
-  cancelBounty,
-  triggerAutoComplete,
-} from '../contracts/BountyEscrow';
+import { useTonConnectUI } from '@tonconnect/ui-react';
+import { Address, toNano, Cell } from '@ton/core';
+import { BountyEscrow } from '../contracts/BountyEscrow';
 
 export function useEscrowContract(escrowAddress: string | null) {
-  const { isConnected } = useWalletStore();
-  const [isSending, setIsSending] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tonConnectUI] = useTonConnectUI();
 
-  const handleSubmitProof = useCallback(async (proofUrl: string) => {
-    if (!escrowAddress || !isConnected) return null;
-    setIsSending(true);
-    setError(null);
-    try {
-      return await submitProof(escrowAddress, proofUrl);
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsSending(false);
-    }
-  }, [escrowAddress, isConnected]);
+  const submitProof = useCallback(
+    async (proofUrl: string) => {
+      if (!escrowAddress) {
+        setError('Escrow address not available');
+        return null;
+      }
 
-  const handleApprove = useCallback(async (submissionId: number) => {
-    if (!escrowAddress || !isConnected) return null;
-    setIsSending(true);
-    setError(null);
-    try {
-      return await approveSubmission(escrowAddress, submissionId);
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsSending(false);
-    }
-  }, [escrowAddress, isConnected]);
+      setLoading(true);
+      setError(null);
 
-  const handleReject = useCallback(async (submissionId: number) => {
-    if (!escrowAddress || !isConnected) return null;
-    setIsSending(true);
-    setError(null);
-    try {
-      return await rejectSubmission(escrowAddress, submissionId);
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsSending(false);
-    }
-  }, [escrowAddress, isConnected]);
+      try {
+        const escrow = Address.parse(escrowAddress);
+        const body = BountyEscrow.buildSubmitProofMessage(proofUrl);
 
-  const handleSelectWinners = useCallback(async (winnerAddresses: string[]) => {
-    if (!escrowAddress || !isConnected) return null;
-    setIsSending(true);
-    setError(null);
-    try {
-      return await selectWinners(escrowAddress, winnerAddresses);
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsSending(false);
-    }
-  }, [escrowAddress, isConnected]);
+        await tonConnectUI.sendTransaction({
+          validUntil: Date.now() + 5 * 60 * 1000,
+          messages: [
+            {
+              address: escrow.toString(),
+              amount: toNano('0.05').toString(), // gas
+              payload: body.toBoc().toString('base64'),
+            },
+          ],
+        });
 
-  const handleCancel = useCallback(async () => {
-    if (!escrowAddress || !isConnected) return null;
-    setIsSending(true);
-    setError(null);
-    try {
-      return await cancelBounty(escrowAddress);
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsSending(false);
-    }
-  }, [escrowAddress, isConnected]);
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to submit proof');
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [escrowAddress, tonConnectUI]
+  );
 
-  const handleAutoComplete = useCallback(async () => {
-    if (!escrowAddress || !isConnected) return null;
-    setIsSending(true);
-    setError(null);
-    try {
-      return await triggerAutoComplete(escrowAddress);
-    } catch (err: any) {
-      setError(err.message);
-      return null;
-    } finally {
-      setIsSending(false);
-    }
-  }, [escrowAddress, isConnected]);
+  const approveSubmission = useCallback(
+    async (submissionId: string) => {
+      if (!escrowAddress) {
+        setError('Escrow address not available');
+        return null;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const escrow = Address.parse(escrowAddress);
+        const body = BountyEscrow.buildApproveMessage(submissionId);
+
+        await tonConnectUI.sendTransaction({
+          validUntil: Date.now() + 5 * 60 * 1000,
+          messages: [
+            {
+              address: escrow.toString(),
+              amount: toNano('0.03').toString(),
+              payload: body.toBoc().toString('base64'),
+            },
+          ],
+        });
+
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to approve submission');
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [escrowAddress, tonConnectUI]
+  );
+
+  const rejectSubmission = useCallback(
+    async (submissionId: string) => {
+      if (!escrowAddress) {
+        setError('Escrow address not available');
+        return null;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const escrow = Address.parse(escrowAddress);
+        const body = BountyEscrow.buildRejectMessage(submissionId);
+
+        await tonConnectUI.sendTransaction({
+          validUntil: Date.now() + 5 * 60 * 1000,
+          messages: [
+            {
+              address: escrow.toString(),
+              amount: toNano('0.03').toString(),
+              payload: body.toBoc().toString('base64'),
+            },
+          ],
+        });
+
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to reject submission');
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [escrowAddress, tonConnectUI]
+  );
+
+  const cancelBounty = useCallback(
+    async () => {
+      if (!escrowAddress) {
+        setError('Escrow address not available');
+        return null;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const escrow = Address.parse(escrowAddress);
+        const body = BountyEscrow.buildCancelMessage();
+
+        await tonConnectUI.sendTransaction({
+          validUntil: Date.now() + 5 * 60 * 1000,
+          messages: [
+            {
+              address: escrow.toString(),
+              amount: toNano('0.03').toString(),
+              payload: body.toBoc().toString('base64'),
+            },
+          ],
+        });
+
+        return true;
+      } catch (err: any) {
+        setError(err.message || 'Failed to cancel bounty');
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [escrowAddress, tonConnectUI]
+  );
 
   return {
-    submitProof: handleSubmitProof,
-    approve: handleApprove,
-    reject: handleReject,
-    selectWinners: handleSelectWinners,
-    cancel: handleCancel,
-    autoComplete: handleAutoComplete,
-    isSending,
+    submitProof,
+    approveSubmission,
+    rejectSubmission,
+    cancelBounty,
+    loading,
     error,
   };
 }

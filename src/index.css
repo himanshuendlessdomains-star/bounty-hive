@@ -4,25 +4,93 @@
 
 :root {
   --bg-primary: #0a0a0a;
-  --bg-secondary: #141414;
-  --bg-card: #1a1a1a;
+  --bg-card: #141414;
+  --bg-card-hover: #1a1a1a;
+  --bg-input: #1e1e1e;
   --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --accent: #22c55e;
-  --accent-hover: #16a34a;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --border: #27272a;
+  --border-focus: #22c55e;
+  --hive-500: #22c55e;
+  --hive-600: #16a34a;
   --danger: #ef4444;
-  --border: #2a2a2a;
+  --warning: #f59e0b;
+  --success: #22c55e;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  margin: 0;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
+/* Telegram WebApp overrides */
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* Custom utilities */
+@layer components {
+  .card {
+    @apply bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4;
+  }
+  .card-hover {
+    @apply card hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer;
+  }
+  .btn-primary {
+    @apply bg-hive-500 hover:bg-hive-600 text-white font-semibold py-2.5 px-5 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-[var(--bg-input)] hover:bg-[var(--border)] text-white font-medium py-2.5 px-5 rounded-xl border border-[var(--border)] transition-all active:scale-95;
+  }
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-5 rounded-xl transition-all active:scale-95;
+  }
+  .input-field {
+    @apply w-full bg-[var(--bg-input)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--border-focus)] transition-colors;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-active {
+    @apply badge bg-hive-500/20 text-hive-400;
+  }
+  .badge-review {
+    @apply badge bg-yellow-500/20 text-yellow-400;
+  }
+  .badge-completed {
+    @apply badge bg-blue-500/20 text-blue-400;
+  }
+  .badge-cancelled {
+    @apply badge bg-zinc-500/20 text-zinc-400;
+  }
 }

@@ -1,28 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-const TON_PRICE_API = 'https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd';
+const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd';
+const REFRESH_INTERVAL = 60_000; // 1 minute
+const FALLBACK_PRICE = 3.25; // fallback if API fails
 
 export function useTonPrice() {
-  const [price, setPrice] = useState<number>(0);
+  const [price, setPrice] = useState<number>(FALLBACK_PRICE);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        const res = await fetch(TON_PRICE_API);
-        const data = await res.json();
-        setPrice(data['the-open-network']?.usd ?? 0);
-      } catch {
-        setPrice(0);
-      } finally {
-        setLoading(false);
+  const fetchPrice = useCallback(async () => {
+    try {
+      const res = await fetch(COINGECKO_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const tonPrice = data?.['the-open-network']?.usd;
+      if (tonPrice) {
+        setPrice(tonPrice);
+        setError(null);
+      } else {
+        throw new Error('Invalid response');
       }
-    };
-
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 60_000); // refresh every minute
-    return () => clearInterval(interval);
+    } catch (err: any) {
+      console.warn('Failed to fetch TON price, using fallback:', err.message);
+      setError(err.message);
+      // Keep the last known price or fallback
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { price, loading };
+  useEffect(() => {
+    fetchPrice();
+    const interval = setInterval(fetchPrice, REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+  }, [fetchPrice]);
+
+  return { price, loading, error, refetch: fetchPrice };
 }

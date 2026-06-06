@@ -5,10 +5,9 @@
       "framework": "vite"
     },
     "backend": {
-      "root": "backend",
+      "entrypoint": "backend/src/index.ts",
       "routePrefix": "/_/backend",
-      "runtime": "nodejs20.x",
-      "entrypoint": "src/index.ts"
+      "framework": "express"
     }
   }
 }

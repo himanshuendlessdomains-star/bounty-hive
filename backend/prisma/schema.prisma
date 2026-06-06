@@ -22,6 +22,7 @@ model User {
 
   bounties      Bounty[]  @relation("Owner")
   submissions   Submission[]
+  winners       Winner[]
 }
 
 model Bounty {
@@ -77,6 +78,7 @@ model Winner {
   bountyId      String
   bounty        Bounty   @relation(fields: [bountyId], references: [id])
   userId        String
+  user          User     @relation(fields: [userId], references: [id])
   payoutAmount  String   // TON amount
   payoutTxHash  String?
   paidAt        DateTime?

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bountyhive
+      POSTGRES_PASSWORD: bountyhive_dev
+      POSTGRES_DB: bountyhive
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bountyhive']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      DATABASE_URL: postgresql://bountyhive:bountyhive_dev@db:5432/bountyhive
+      PORT: 3001
+      TON_NETWORK: testnet
+      FACTORY_ADDRESS: ${FACTORY_ADDRESS:-}
+      TON_API_KEY: ${TON_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      JWT_SECRET: ${JWT_SECRET:-dev_secret}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npx prisma migrate deploy && node dist/index.js"
+
+volumes:
+  pgdata:

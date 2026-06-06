@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BountyCard } from '../components/BountyCard';
 import { WalletButton } from '../components/WalletButton';
 import { api } from '../api/client';
-import { Bounty } from '../types/bounty';
+import { Bounty, BountyType } from '../types/bounty';
 
 export function DiscoverPage() {
   const navigate = useNavigate();
@@ -11,13 +11,20 @@ export function DiscoverPage() {
   const [search, setSearch] = useState('');
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setLoading(true);
-    api.getBounties({ status: 'active', type: filter === 'all' ? undefined : filter })
-      .then((res) => setBounties(res.bounties as Bounty[]))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    api
+      .getBounties({ status: 'active', type: filter === 'all' ? undefined : filter })
+      .then((res) => {
+        setBounties(res.bounties as Bounty[]);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
   }, [filter]);
 
   const filtered = bounties.filter(
@@ -70,7 +77,14 @@ export function DiscoverPage() {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && error && (
+          <div className="text-center py-8">
+            <p className="text-red-400">{error}</p>
+            <button onClick={() => window.location.reload()} className="btn-secondary mt-2">Retry</button>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-12">
             <p className="text-4xl mb-3">🔍</p>
             <p className="text-[var(--text-secondary)]">No bounties found</p>

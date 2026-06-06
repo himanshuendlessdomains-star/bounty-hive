@@ -1,82 +1,63 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
-// ─── Telegram Webhook ────────────────────────────────────────────────────────
+// ─── POST /api/webhooks/telegram ─────────────────────────────────────────────
 
 router.post('/telegram', async (req: Request, res: Response) => {
   try {
     const update = req.body;
+    const text: string = update.message?.text ?? '';
+    const chatId: number = update.message?.chat?.id;
 
-    // Handle /start command with deep link
-    if (update.message?.text?.startsWith('/start')) {
-      const chatId = update.message.chat.id;
-      const text = update.message.text;
+    if (!text.startsWith('/start') || !chatId) {
+      return res.sendStatus(200);
+    }
 
-      // Deep link: /start bounty_<id>
-      if (text.includes('bounty_')) {
-        const bountyId = text.split('bounty_')[1];
-        await sendTelegramMessage(
-          chatId,
-          `🏴‍☠️ Check out this bounty: https://t.me/BountyHiveBot/app?startApp=bounty_${bountyId}`
-        );
-      } else {
-        await sendTelegramMessage(
-          chatId,
-          'Welcome to BountyHive! 🏴‍☠️\n\nCreate and complete micro-bounties on TON.\n\nOpen the app to get started.'
-        );
-      }
+    const parts = text.trim().split(' ');
+    const payload = parts[1] ?? '';
+
+    if (payload.startsWith('bounty_')) {
+      const bountyId = payload.slice(7);
+      await sendMessage(chatId, `🏴‍☠️ Check out this bounty in BountyHive!\n\nhttps://t.me/BountyHiveBot/app?startApp=bounty_${bountyId}`);
+    } else {
+      await sendMessage(chatId, 'Welcome to BountyHive! 🏴‍☠️\n\nCreate and complete micro-bounties on TON.\n\nOpen the app to get started.');
     }
 
     res.sendStatus(200);
-  } catch (err: any) {
+  } catch (err) {
     console.error('Telegram webhook error:', err);
     res.sendStatus(500);
   }
 });
 
-// ─── Notification helper ──────────────────────────────────────────────────────
+// ─── Helper ───────────────────────────────────────────────────────────────────
 
-async function sendTelegramMessage(chatId: number, text: string) {
+async function sendMessage(chatId: number, text: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) return;
-
   await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+    body: JSON.stringify({ chat_id: chatId, text }),
   });
 }
-
-// ─── Send notification to bounty participants ─────────────────────────────────
 
 export async function notifyBountyUpdate(bountyId: string, message: string) {
   const bounty = await prisma.bounty.findUnique({
     where: { id: bountyId },
-    include: {
-      submissions: { include: { user: true } },
-      owner: true,
-    },
+    include: { submissions: { include: { user: true } }, owner: true },
   });
-
   if (!bounty) return;
 
   const recipients = new Set<number>();
-
-  if (bounty.owner.telegramId) {
-    recipients.add(Number(bounty.owner.telegramId));
-  }
-
+  if (bounty.owner.telegramId) recipients.add(Number(bounty.owner.telegramId));
   for (const sub of bounty.submissions) {
-    if (sub.user.telegramId) {
-      recipients.add(Number(sub.user.telegramId));
-    }
+    if (sub.user.telegramId) recipients.add(Number(sub.user.telegramId));
   }
-
   for (const chatId of recipients) {
-    await sendTelegramMessage(chatId, message);
+    await sendMessage(chatId, message);
   }
 }
 

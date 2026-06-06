@@ -8,10 +8,16 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
-        value: development
+        value: production
       - key: PORT
         value: "3001"
       - key: DATABASE_URL
         sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false  # set to your Vercel URL, e.g. https://bounty-hive.vercel.app
+      - key: FACTORY_ADDRESS
+        sync: false  # set after deploying contracts to mainnet
       - key: TON_NETWORK
         value: testnet

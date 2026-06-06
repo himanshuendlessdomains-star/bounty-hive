@@ -1,26 +1,38 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
-interface Toast { id: number; type: ToastType; message: string; }
-interface ToastContextType { toasts: Toast[]; addToast: (type: ToastType, message: string) => void; removeToast: (id: number) => void; }
+interface Toast { id: number; type: ToastType; message: string }
+interface ToastContextType {
+  toasts: Toast[];
+  addToast: (type: ToastType, message: string) => void;
+  removeToast: (id: number) => void;
+}
 
 const ToastContext = createContext<ToastContextType>({ toasts: [], addToast: () => {}, removeToast: () => {} });
 export function useToast() { return useContext(ToastContext); }
 
+let _nextId = 0;
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  let nextId = 0;
 
   const addToast = useCallback((type: ToastType, message: string) => {
-    const id = ++nextId;
+    const id = ++_nextId;
     setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => { setToasts((prev) => prev.filter((t) => t.id !== id)); }, 4000);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
   }, []);
 
-  const removeToast = useCallback((id: number) => { setToasts((prev) => prev.filter((t) => t.id !== id)); }, []);
+  const removeToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const icons: Record<ToastType, string> = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
-  const colors: Record<ToastType, string> = { success: 'border-hive-500 bg-hive-500/10', error: 'border-red-500 bg-red-500/10', info: 'border-blue-500 bg-blue-500/10', warning: 'border-yellow-500 bg-yellow-500/10' };
+  const colors: Record<ToastType, string> = {
+    success: 'border-hive-500 bg-hive-500/10',
+    error: 'border-red-500 bg-red-500/10',
+    info: 'border-blue-500 bg-blue-500/10',
+    warning: 'border-yellow-500 bg-yellow-500/10',
+  };
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>

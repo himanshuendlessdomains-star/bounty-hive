@@ -13,7 +13,7 @@ export function CreateBountyPage() {
   const navigate = useNavigate();
   const { createBounty, loading: creating, error: createError } = useBountyContract();
   const { price: tonPrice } = useTonPrice();
-  const { address: walletAddress, connected } = useWalletStore();
+  const { connected } = useWalletStore();
   const { addToast } = useToast();
 
   const [step, setStep] = useState(1);
@@ -50,7 +50,6 @@ export function CreateBountyPage() {
       winnerSelection,
       verification,
       verificationRule,
-      ownerId: walletAddress!,
     });
 
     if (result) {

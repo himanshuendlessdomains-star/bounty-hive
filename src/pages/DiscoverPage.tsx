@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BountyCard } from '../components/BountyCard';
 import { WalletButton } from '../components/WalletButton';
@@ -13,18 +13,14 @@ export function DiscoverPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setLoading(true);
+    setError(null);
     api
       .getBounties({ status: 'active', type: filter === 'all' ? undefined : filter })
-      .then((res) => {
-        setBounties(res.bounties.map(mapBounty));
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      .then((res) => setBounties(res.bounties.map(mapBounty)))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [filter]);
 
   const filtered = bounties.filter(
@@ -80,7 +76,9 @@ export function DiscoverPage() {
         {!loading && error && (
           <div className="text-center py-8">
             <p className="text-red-400">{error}</p>
-            <button onClick={() => window.location.reload()} className="btn-secondary mt-2">Retry</button>
+            <button onClick={() => window.location.reload()} className="btn-secondary mt-2">
+              Retry
+            </button>
           </div>
         )}
 
@@ -93,11 +91,7 @@ export function DiscoverPage() {
         )}
 
         {filtered.map((bounty) => (
-          <BountyCard
-            key={bounty.id}
-            bounty={bounty}
-            onClick={() => navigate(`/bounty/${bounty.id}`)}
-          />
+          <BountyCard key={bounty.id} bounty={bounty} onClick={() => navigate(`/bounty/${bounty.id}`)} />
         ))}
 
         {filtered.length > 0 && (

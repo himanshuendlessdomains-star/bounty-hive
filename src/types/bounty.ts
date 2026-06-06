@@ -79,7 +79,6 @@ export interface CreateBountyPayload {
   verification: VerificationMethod;
   verificationRule?: string;
   escrowAddress?: string;
-  ownerId: string;
 }
 
 // ─── Swap Types ────────────────────────────────────────────────────────────────

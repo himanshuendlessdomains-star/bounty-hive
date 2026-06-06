@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, BountyResponse } from '../api/client';
 import { useEscrowContract } from '../hooks/useEscrowContract';
 import { useWalletStore } from '../stores/walletStore';
+import { useToast } from '../components/Toast';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { WalletButton } from '../components/WalletButton';
 import { formatTon, formatUsd, statusColor, statusLabel, bountyTypeIcon } from '../utils/format';
@@ -11,6 +12,7 @@ export function BountyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { address: walletAddress } = useWalletStore();
+  const { addToast } = useToast();
   const [bounty, setBounty] = useState<BountyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,34 +20,32 @@ export function BountyDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const { submitProof } = useEscrowContract(bounty?.escrowAddress ?? null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!id) return;
     setLoading(true);
     api
       .getBounty(id)
-      .then((res) => {
-        setBounty(res);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      .then((res) => setBounty(res))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [id]);
 
   const handleSubmitProof = async () => {
     if (!proofUrl.trim() || !bounty || !walletAddress) return;
     setSubmitting(true);
     try {
-      await api.submitProof({ bountyId: bounty.id, userId: walletAddress, proofUrl });
+      await api.submitProof({ bountyId: bounty.id, proofUrl });
       if (bounty.escrowAddress) {
         await submitProof(proofUrl);
       }
       const res = await api.getBounty(bounty.id);
       setBounty(res);
       setProofUrl('');
+      addToast('success', 'Proof submitted!');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Submission failed');
+      const msg = err instanceof Error ? err.message : 'Submission failed';
+      setError(msg);
+      addToast('error', msg);
     } finally {
       setSubmitting(false);
     }
@@ -67,10 +67,8 @@ export function BountyDetailPage() {
     return (
       <div className="p-4 pb-20 text-center">
         <p className="text-4xl mb-3">😕</p>
-        <p className="text-[var(--text-secondary)]">Bounty not found</p>
-        <button onClick={() => navigate('/')} className="btn-primary mt-4">
-          Go back
-        </button>
+        <p className="text-[var(--text-secondary)]">{error || 'Bounty not found'}</p>
+        <button onClick={() => navigate('/')} className="btn-primary mt-4">Go back</button>
       </div>
     );
   }
@@ -132,6 +130,9 @@ export function BountyDetailPage() {
         {isActive && !isOwner && (
           <div className="card">
             <h3 className="text-white font-semibold mb-3">Submit Proof</h3>
+            {!walletAddress && (
+              <p className="text-yellow-400 text-sm mb-3">Connect your wallet to submit proof</p>
+            )}
             <input
               type="url"
               placeholder="Paste your proof URL (screenshot, link, etc.)"
@@ -141,7 +142,7 @@ export function BountyDetailPage() {
             />
             <button
               onClick={handleSubmitProof}
-              disabled={!proofUrl.trim() || submitting}
+              disabled={!proofUrl.trim() || !walletAddress || submitting}
               className="btn-primary w-full"
             >
               {submitting ? 'Submitting...' : 'Submit Proof'}
@@ -166,9 +167,7 @@ export function BountyDetailPage() {
                     </div>
                     <div>
                       <p className="text-white text-sm">{sub.user?.displayName || 'Anonymous'}</p>
-                      <p className="text-[var(--text-muted)] text-xs truncate max-w-[200px]">
-                        {sub.proofUrl}
-                      </p>
+                      <p className="text-[var(--text-muted)] text-xs truncate max-w-[200px]">{sub.proofUrl}</p>
                     </div>
                   </div>
                   <span className={statusColor(sub.status)}>{statusLabel(sub.status)}</span>

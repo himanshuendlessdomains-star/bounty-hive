@@ -1,5 +1,3 @@
-// API client for BountyHive backend
-
 import {
   Bounty,
   Submission,
@@ -10,23 +8,26 @@ import {
   BountyStatus,
   SubmissionStatus,
 } from '../types/bounty';
+import { useWalletStore } from '../stores/walletStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+// Telegram initData is immutable for the session lifetime — read once
 const tgInitData: string =
   typeof window !== 'undefined'
     ? (window as any).Telegram?.WebApp?.initData ?? ''
     : '';
 
-async function request<T>(
-  path: string,
-  options?: RequestInit
-): Promise<T> {
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  // TON address is read dynamically so it reflects the currently connected wallet
+  const tonAddress = useWalletStore.getState().address ?? '';
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-telegram-init-data': tgInitData,
+      ...(tgInitData ? { 'x-telegram-init-data': tgInitData } : {}),
+      ...(tonAddress ? { 'x-ton-address': tonAddress } : {}),
       ...options?.headers,
     },
   });
@@ -39,7 +40,7 @@ async function request<T>(
   return res.json();
 }
 
-// ─── Bounties ────────────────────────────────────────────────────────────────
+// ─── Response types ───────────────────────────────────────────────────────────
 
 export interface BountyResponse {
   id: string;
@@ -63,12 +64,7 @@ export interface BountyResponse {
   reviewEndsAt: string;
   completedAt: string | null;
   ownerId: string;
-  owner: {
-    id: string;
-    username: string | null;
-    displayName: string | null;
-    avatarUrl: string | null;
-  };
+  owner: { id: string; username: string | null; displayName: string | null; avatarUrl: string | null };
   submissions: SubmissionResponse[];
   winners: WinnerResponse[];
   submissionCount?: number;
@@ -82,12 +78,7 @@ export interface SubmissionResponse {
   status: string;
   submittedAt: string;
   reviewedAt: string | null;
-  user: {
-    id: string;
-    username: string | null;
-    displayName: string | null;
-    avatarUrl: string | null;
-  };
+  user: { id: string; username: string | null; displayName: string | null; avatarUrl: string | null };
   bounty?: BountyResponse;
 }
 
@@ -98,17 +89,12 @@ export interface WinnerResponse {
   payoutAmount: string;
   payoutTxHash: string | null;
   paidAt: string | null;
-  user: {
-    id: string;
-    username: string | null;
-    displayName: string | null;
-    avatarUrl: string | null;
-  };
+  user: { id: string; username: string | null; displayName: string | null; avatarUrl: string | null };
 }
 
-export const api = {
-  // ─── Bounties ────────────────────────────────────────────────────────────
+// ─── API methods ──────────────────────────────────────────────────────────────
 
+export const api = {
   getBounties: (params?: { status?: string; type?: string; page?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.status) query.set('status', params.status);
@@ -132,33 +118,16 @@ export const api = {
     verification: string;
     verificationRule?: string;
     escrowAddress?: string;
-    ownerId: string;
-  }) => request<BountyResponse>('/bounties', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
+  }) => request<BountyResponse>('/bounties', { method: 'POST', body: JSON.stringify(data) }),
 
   updateBounty: (id: string, data: { status: string }) =>
-    request<BountyResponse>(`/bounties/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+    request<BountyResponse>(`/bounties/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
-  // ─── Submissions ──────────────────────────────────────────────────────────
-
-  submitProof: (data: { bountyId: string; userId: string; proofUrl: string }) =>
-    request<SubmissionResponse>('/submissions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  submitProof: (data: { bountyId: string; proofUrl: string }) =>
+    request<SubmissionResponse>('/submissions', { method: 'POST', body: JSON.stringify(data) }),
 
   updateSubmission: (id: string, status: 'approved' | 'rejected') =>
-    request<SubmissionResponse>(`/submissions/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    }),
-
-  // ─── Users ────────────────────────────────────────────────────────────────
+    request<SubmissionResponse>(`/submissions/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 
   getUser: (id: string) => request<any>(`/users/${id}`),
 
@@ -171,22 +140,17 @@ export const api = {
     request<{ submissions: SubmissionResponse[] }>(`/users/${id}/submissions`),
 
   upsertUser: (data: {
-    telegramId: string;
+    telegramId?: string;
     tonAddress?: string;
     username?: string;
     displayName?: string;
     avatarUrl?: string;
-  }) => request<any>('/users', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
-
-  // ─── Health ───────────────────────────────────────────────────────────────
+  }) => request<any>('/users', { method: 'POST', body: JSON.stringify(data) }),
 
   health: () => request<{ status: string; timestamp: string }>('/health'),
 };
 
-// ─── Response → Domain mappers ────────────────────────────────────────────────
+// ─── Domain mappers ───────────────────────────────────────────────────────────
 
 export function mapSubmission(r: SubmissionResponse): Submission {
   return {

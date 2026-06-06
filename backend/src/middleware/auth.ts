@@ -7,7 +7,6 @@ interface TelegramUser {
   last_name?: string;
   username?: string;
   photo_url?: string;
-  language_code?: string;
 }
 
 function validateTelegramHash(initData: string, botToken: string): boolean {
@@ -24,43 +23,49 @@ function validateTelegramHash(initData: string, botToken: string): boolean {
   const secret = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
   const checkHash = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
 
-  return crypto.timingSafeEqual(Buffer.from(checkHash, 'hex'), Buffer.from(hash, 'hex'));
+  try {
+    return crypto.timingSafeEqual(Buffer.from(checkHash, 'hex'), Buffer.from(hash, 'hex'));
+  } catch {
+    return false;
+  }
 }
 
 export function telegramAuth(req: Request, res: Response, next: NextFunction) {
-  const initData = req.headers['x-telegram-init-data'] as string;
+  // Read operations are public — no auth needed
+  if (req.method === 'GET') return next();
+
+  const initData = req.headers['x-telegram-init-data'] as string | undefined;
+  const tonAddress = req.headers['x-ton-address'] as string | undefined;
+
+  // Development bypass
+  if (process.env.NODE_ENV === 'development' && !initData && !tonAddress) {
+    req.user = { id: 'dev-user', telegramId: '0', username: 'dev', displayName: 'Dev User' };
+    return next();
+  }
+
+  // Chrome / browser users: TON wallet address as identity
+  if (!initData && tonAddress) {
+    req.user = { id: tonAddress, telegramId: '', username: undefined, displayName: undefined };
+    return next();
+  }
 
   if (!initData) {
-    if (process.env.NODE_ENV === 'development') {
-      req.user = {
-        id: 'dev-user',
-        telegramId: '0',
-        username: 'dev',
-        displayName: 'Dev User',
-      };
-      return next();
-    }
-    return res.status(401).json({ error: 'Missing Telegram auth data' });
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   try {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-
     if (botToken && process.env.NODE_ENV !== 'development') {
       if (!validateTelegramHash(initData, botToken)) {
-        return res.status(401).json({ error: 'Invalid Telegram auth data' });
+        return res.status(401).json({ error: 'Invalid Telegram auth' });
       }
     }
 
     const params = new URLSearchParams(initData);
     const userJson = params.get('user');
-
-    if (!userJson) {
-      return res.status(401).json({ error: 'Invalid auth data: missing user' });
-    }
+    if (!userJson) return res.status(401).json({ error: 'Missing user in auth data' });
 
     const tgUser: TelegramUser = JSON.parse(userJson);
-
     req.user = {
       id: String(tgUser.id),
       telegramId: String(tgUser.id),
@@ -68,7 +73,6 @@ export function telegramAuth(req: Request, res: Response, next: NextFunction) {
       displayName: tgUser.first_name + (tgUser.last_name ? ` ${tgUser.last_name}` : ''),
       avatarUrl: tgUser.photo_url,
     };
-
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid auth data' });

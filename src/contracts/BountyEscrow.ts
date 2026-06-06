@@ -1,5 +1,4 @@
-import { Address, Cell, beginCell, toNano } from '@ton/core';
-import { getTonConnectUI } from './tonConnect';
+import { Address, Cell, beginCell } from '@ton/core';
 
 const SUBMIT_PROOF_OPCODE = 0x10;
 const APPROVE_SUBMISSION_OPCODE = 0x11;
@@ -54,64 +53,4 @@ export class BountyEscrow {
       .storeUint(AUTO_COMPLETE_OPCODE, 32)
       .endCell();
   }
-}
-
-export async function submitProof(escrowAddress: string, proofUrl: string): Promise<string> {
-  const ui = getTonConnectUI();
-  const body = BountyEscrow.buildSubmitProofMessage(proofUrl);
-  const result = await ui.sendTransaction({
-    messages: [{ address: escrowAddress, amount: toNano('0.05').toString(), payload: body.toBoc().toString('base64') }],
-    validUntil: Math.floor(Date.now() / 1000) + 600,
-  });
-  return result.boc;
-}
-
-export async function approveSubmission(escrowAddress: string, submissionId: number): Promise<string> {
-  const ui = getTonConnectUI();
-  const body = BountyEscrow.buildApproveMessage(String(submissionId));
-  const result = await ui.sendTransaction({
-    messages: [{ address: escrowAddress, amount: toNano('0.03').toString(), payload: body.toBoc().toString('base64') }],
-    validUntil: Math.floor(Date.now() / 1000) + 600,
-  });
-  return result.boc;
-}
-
-export async function rejectSubmission(escrowAddress: string, submissionId: number): Promise<string> {
-  const ui = getTonConnectUI();
-  const body = BountyEscrow.buildRejectMessage(String(submissionId));
-  const result = await ui.sendTransaction({
-    messages: [{ address: escrowAddress, amount: toNano('0.03').toString(), payload: body.toBoc().toString('base64') }],
-    validUntil: Math.floor(Date.now() / 1000) + 600,
-  });
-  return result.boc;
-}
-
-export async function selectWinners(escrowAddress: string, winnerAddresses: string[]): Promise<string> {
-  const ui = getTonConnectUI();
-  const body = BountyEscrow.buildSelectWinnersMessage(winnerAddresses);
-  const result = await ui.sendTransaction({
-    messages: [{ address: escrowAddress, amount: toNano('0.1').toString(), payload: body.toBoc().toString('base64') }],
-    validUntil: Math.floor(Date.now() / 1000) + 600,
-  });
-  return result.boc;
-}
-
-export async function cancelBounty(escrowAddress: string): Promise<string> {
-  const ui = getTonConnectUI();
-  const body = BountyEscrow.buildCancelMessage();
-  const result = await ui.sendTransaction({
-    messages: [{ address: escrowAddress, amount: toNano('0.03').toString(), payload: body.toBoc().toString('base64') }],
-    validUntil: Math.floor(Date.now() / 1000) + 600,
-  });
-  return result.boc;
-}
-
-export async function triggerAutoComplete(escrowAddress: string): Promise<string> {
-  const ui = getTonConnectUI();
-  const body = BountyEscrow.buildAutoCompleteMessage();
-  const result = await ui.sendTransaction({
-    messages: [{ address: escrowAddress, amount: toNano('0.1').toString(), payload: body.toBoc().toString('base64') }],
-    validUntil: Math.floor(Date.now() / 1000) + 600,
-  });
-  return result.boc;
 }

@@ -1,149 +1,99 @@
 import { PrismaClient } from '@prisma/client';
-
-// ─── Blockchain Indexer ──────────────────────────────────────────────────────
-// Watches for bounty status transitions and auto-completes expired bounties
+import crypto from 'crypto';
 
 const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS || '';
-const POLL_INTERVAL = 10_000; // 10 seconds
+const POLL_INTERVAL = 10_000;
 
 export async function startIndexer(prisma: PrismaClient) {
   console.log('🔍 Starting blockchain indexer...');
-  console.log(`   Factory: ${FACTORY_ADDRESS || 'not configured'}`);
 
   if (!FACTORY_ADDRESS) {
     console.log('⚠️  No FACTORY_ADDRESS set, indexer will not start');
     return;
   }
 
-  // Main polling loop
   setInterval(async () => {
-    try {
-      await pollBountyEvents(prisma);
-    } catch (err) {
-      console.error('Indexer poll error:', err);
-    }
+    try { await pollBountyEvents(prisma); } catch (err) { console.error('Indexer poll error:', err); }
   }, POLL_INTERVAL);
 
-  // Initial poll
   await pollBountyEvents(prisma);
 }
 
-async function pollBountyEvents(prisma: PrismaClient) {
-  // 1. Move active bounties past their end time to "review"
-  const expiredBounties = await prisma.bounty.findMany({
-    where: {
-      status: 'active',
-      endsAt: { lte: new Date() },
-    },
-  });
+function cryptoShuffle<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
 
-  for (const bounty of expiredBounties) {
-    await prisma.bounty.update({
-      where: { id: bounty.id },
-      data: { status: 'review' },
-    });
-    console.log(`📋 Bounty ${bounty.id} moved to review status`);
+async function pollBountyEvents(prisma: PrismaClient) {
+  // Fetch TON price once per poll cycle
+  const tonPrice = await getTonPrice();
+
+  // 1. Move expired active bounties to review
+  const expiredActive = await prisma.bounty.findMany({
+    where: { status: 'active', endsAt: { lte: new Date() } },
+  });
+  for (const bounty of expiredActive) {
+    await prisma.bounty.update({ where: { id: bounty.id }, data: { status: 'review' } });
+    console.log(`📋 Bounty ${bounty.id} → review`);
   }
 
   // 2. Auto-complete review bounties past their review window
   const reviewExpired = await prisma.bounty.findMany({
-    where: {
-      status: 'review',
-      reviewEndsAt: { lte: new Date() },
-    },
+    where: { status: 'review', reviewEndsAt: { lte: new Date() } },
   });
-
   for (const bounty of reviewExpired) {
-    if (bounty.winnerSelection === 'draw') {
-      const approvedSubmissions = await prisma.submission.findMany({
-        where: { bountyId: bounty.id, status: 'approved' },
+    const approved = await prisma.submission.findMany({
+      where: { bountyId: bounty.id, status: 'approved' },
+    });
+
+    if (approved.length === 0) {
+      await prisma.bounty.update({
+        where: { id: bounty.id },
+        data: { status: 'cancelled', completedAt: new Date() },
       });
-
-      if (approvedSubmissions.length === 0) {
-        await prisma.bounty.update({
-          where: { id: bounty.id },
-          data: { status: 'cancelled', completedAt: new Date() },
-        });
-        console.log(`💰 Bounty ${bounty.id} cancelled (no approved submissions)`);
-      } else {
-        const winnerCount = Math.min(bounty.winnerCount, approvedSubmissions.length);
-        const shuffled = approvedSubmissions.sort(() => Math.random() - 0.5);
-        const winners = shuffled.slice(0, winnerCount);
-
-        for (const winner of winners) {
-          await prisma.winner.create({
-            data: {
-              bountyId: bounty.id,
-              userId: winner.userId,
-              payoutAmount: bounty.perWinnerAmount,
-            },
-          });
-        }
-
-        await prisma.bounty.update({
-          where: { id: bounty.id },
-          data: { status: 'completed', completedAt: new Date() },
-        });
-        console.log(`🏆 Bounty ${bounty.id} auto-completed with ${winners.length} winners`);
-      }
-    } else {
-      // Manual: if owner didn't pick winners, auto-select approved submissions
-      const approvedSubmissions = await prisma.submission.findMany({
-        where: { bountyId: bounty.id, status: 'approved' },
-      });
-
-      if (approvedSubmissions.length === 0) {
-        await prisma.bounty.update({
-          where: { id: bounty.id },
-          data: { status: 'cancelled', completedAt: new Date() },
-        });
-        console.log(`💰 Bounty ${bounty.id} cancelled (manual timeout, no submissions)`);
-      } else {
-        const winners = approvedSubmissions.slice(0, bounty.winnerCount);
-        for (const winner of winners) {
-          await prisma.winner.create({
-            data: {
-              bountyId: bounty.id,
-              userId: winner.userId,
-              payoutAmount: bounty.perWinnerAmount,
-            },
-          });
-        }
-        await prisma.bounty.update({
-          where: { id: bounty.id },
-          data: { status: 'completed', completedAt: new Date() },
-        });
-        console.log(`🏆 Bounty ${bounty.id} auto-completed (manual timeout, ${winners.length} winners)`);
-      }
+      console.log(`💰 Bounty ${bounty.id} cancelled (no approved submissions)`);
+      continue;
     }
+
+    const pool = bounty.winnerSelection === 'draw' ? cryptoShuffle(approved) : approved;
+    const winners = pool.slice(0, Math.min(bounty.winnerCount, approved.length));
+
+    for (const w of winners) {
+      await prisma.winner.create({
+        data: { bountyId: bounty.id, userId: w.userId, payoutAmount: bounty.perWinnerAmount },
+      });
+    }
+    await prisma.bounty.update({
+      where: { id: bounty.id },
+      data: { status: 'completed', completedAt: new Date() },
+    });
+    console.log(`🏆 Bounty ${bounty.id} completed with ${winners.length} winners`);
   }
 
-  // 3. Update TON prices for active bounties
-  const activeBounties = await prisma.bounty.findMany({
-    where: { status: { in: ['active', 'review'] } },
-  });
-
-  if (activeBounties.length > 0) {
-    const tonPrice = await getTonPrice();
-    if (tonPrice > 0) {
-      for (const bounty of activeBounties) {
-        await prisma.bounty.update({
-          where: { id: bounty.id },
-          data: {
-            poolUsd: (parseFloat(bounty.poolAmount) * tonPrice).toFixed(2),
-            perWinnerUsd: (parseFloat(bounty.perWinnerAmount) * tonPrice).toFixed(2),
-          },
-        });
-      }
+  // 3. Update USD prices for active/review bounties
+  if (tonPrice > 0) {
+    const active = await prisma.bounty.findMany({
+      where: { status: { in: ['active', 'review'] } },
+    });
+    for (const bounty of active) {
+      await prisma.bounty.update({
+        where: { id: bounty.id },
+        data: {
+          poolUsd: (parseFloat(bounty.poolAmount) * tonPrice).toFixed(2),
+          perWinnerUsd: (parseFloat(bounty.perWinnerAmount) * tonPrice).toFixed(2),
+        },
+      });
     }
   }
 }
 
 async function getTonPrice(): Promise<number> {
   try {
-    const res = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd'
-    );
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
     const data = await res.json();
     return data['the-open-network']?.usd ?? 0;
   } catch {

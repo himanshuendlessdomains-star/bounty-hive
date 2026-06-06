@@ -1,7 +1,7 @@
-import { TonClient, WalletContractV4, internal } from '@ton/ton';
+import { TonClient, WalletContractV4 } from '@ton/ton';
 import { mnemonicToPrivateKey } from '@ton/crypto';
-import { BountyFactory } from '../wrappers/BountyFactory';
-import { BountyEscrow } from '../wrappers/BountyEscrow';
+import { BountyFactory } from '../build/BountyFactory/BountyFactory_BountyFactory';
+import { BountyEscrow } from '../build/BountyEscrow/BountyEscrow_BountyEscrow';
 import { toNano } from '@ton/core';
 
 // ─── Testnet Deployment ──────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 // BountyFactory — deploys BountyEscrow contracts and tracks all bounties
 
 import "@stdlib/ownable";
+import "./BountyEscrow.tact";
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 
@@ -18,10 +19,11 @@ message CreateBounty {
 
 contract BountyFactory with Ownable {
 
-    platformFeeBps: Int;       // platform fee in basis points (100 = 1%)
+    owner: Address;
+    platformFeeBps: Int;
     platformAddress: Address;
     bountyCount: Int;
-    bounties: map<Int, Address>; // index -> BountyEscrow address
+    bounties: map<Int, Address>;
 
     init(platformFeeBps: Int, platformAddress: Address) {
         self.owner = sender();
@@ -33,8 +35,7 @@ contract BountyFactory with Ownable {
 
     receive(msg: CreateBounty) {
         // Validate minimum payout: pool must cover $0.01 per winner
-        // The pool amount is msg.value (TON sent with this message)
-        let poolAmount = msg.value;
+        let poolAmount = context().value;
         let perWinner = poolAmount / msg.winnerCount;
 
         // Minimum per-winner: 1000000 nanotons (~0.001 TON, well above $0.01)
@@ -45,18 +46,18 @@ contract BountyFactory with Ownable {
 
         // Deploy new BountyEscrow contract
         let escrow = initOf BountyEscrow(
-            owner: sender(),
-            title: msg.title,
-            description: msg.description,
-            bountyType: msg.bountyType,
-            poolAmount: poolAmount,
-            winnerCount: msg.winnerCount,
-            winnerSelection: msg.winnerSelection,
-            verification: msg.verification,
-            verificationRule: msg.verificationRule,
-            platformFeeBps: self.platformFeeBps,
-            platformAddress: self.platformAddress,
-            createdAt: now()
+            sender(),
+            msg.title,
+            msg.description,
+            msg.bountyType,
+            poolAmount,
+            msg.winnerCount,
+            msg.winnerSelection,
+            msg.verification,
+            msg.verificationRule,
+            self.platformFeeBps,
+            self.platformAddress,
+            now()
         );
 
         // Send the pool amount to the escrow contract

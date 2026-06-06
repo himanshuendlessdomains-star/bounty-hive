@@ -1,0 +1,991 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; BountyFactory_BountyEscrow.headers.fc
+;;
+;; Header files for BountyEscrow
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; __tact_not_null
+forall X -> X __tact_not_null(X x) impure inline;
+
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
+
+;; __tact_prepare_random
+() __tact_prepare_random() impure inline;
+
+;; __tact_slice_eq
+int __tact_slice_eq(slice a, slice b) inline;
+
+;; __tact_dict_get_int_slice
+slice __tact_dict_get_int_slice(cell d, int kl, int k) inline;
+
+;; __tact_dict_set_int_slice
+(cell, ()) __tact_dict_set_int_slice(cell d, int kl, int k, slice v) inline;
+
+;; __tact_dict_get_int_int
+int __tact_dict_get_int_int(cell d, int kl, int k, int vl) inline;
+
+;; __tact_dict_set_int_int
+(cell, ()) __tact_dict_set_int_int(cell d, int kl, int k, int v, int vl) inline;
+
+;; __tact_dict_get_int_cell
+cell __tact_dict_get_int_cell(cell d, int kl, int k) inline;
+
+;; __tact_dict_set_int_cell
+(cell, ()) __tact_dict_set_int_cell(cell d, int kl, int k, cell v) inline;
+
+;; $Submission$_store
+builder $Submission$_store(builder build_0, (int, slice, slice, int, int) v) inline;
+
+;; $Submission$_store_cell
+cell $Submission$_store_cell((int, slice, slice, int, int) v, builder b) inline;
+
+;; $Submission$_load
+(slice, ((int, slice, slice, int, int))) $Submission$_load(slice sc_0) inline;
+
+;; $Submission$_as_optional
+tuple $Submission$_as_optional((int, slice, slice, int, int) v) inline;
+
+;; $Submission$_load_opt
+tuple $Submission$_load_opt(cell cl) inline;
+
+;; $BountyEscrow$_store
+builder $BountyEscrow$_store(builder build_0, (slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) v) inline;
+
+;; $BountyEscrow$_load
+(slice, ((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int))) $BountyEscrow$_load(slice sc_0) inline;
+
+;; $Submission$_not_null
+((int, slice, slice, int, int)) $Submission$_not_null(tuple v) inline;
+
+;; $BountyEscrow$init$_load
+(slice, ((slice, slice, slice, slice, int, int, slice, slice, slice, int, slice, int))) $BountyEscrow$init$_load(slice sc_0) inline_ref;
+
+;; $BountyEscrow$_contract_init
+(slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $BountyEscrow$_contract_init(slice $owner, slice $title, slice $description, slice $bountyType, int $poolAmount, int $winnerCount, slice $winnerSelection, slice $verification, slice $verificationRule, int $platformFeeBps, slice $platformAddress, int $createdAt) impure inline;
+
+;; $BountyEscrow$_contract_load
+(slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $BountyEscrow$_contract_load() impure inline;
+
+;; $BountyEscrow$_contract_store
+() $BountyEscrow$_contract_store((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) v) impure inline;
+
+;; $global_random
+int $global_random(int $min, int $max) impure inline;
+
+;; $BountyEscrow$_fun_title
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_title((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_description
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_description((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_bountyType
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_bountyType((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_poolAmount
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_poolAmount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_winnerCount
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_winnerCount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_perWinnerAmount
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_perWinnerAmount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_winnerSelection
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_winnerSelection((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_verification
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_verification((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_status
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_status((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_endsAt
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_endsAt((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_reviewEndsAt
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_reviewEndsAt((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_submissionCount
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_submissionCount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_payoutDone
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_payoutDone((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_winnerCountFinal
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_winnerCountFinal((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $BountyEscrow$_fun_owner
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_owner((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref;
+
+;; $Submission$_constructor_id_submitter_proofUrl_submittedAt_approved
+((int, slice, slice, int, int)) $Submission$_constructor_id_submitter_proofUrl_submittedAt_approved(int $id, slice $submitter, slice $proofUrl, int $submittedAt, int $approved) inline;
+
+;; $SendParameters$_constructor_to_value_mode
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode(slice $to, int $value, int $mode) inline;
+
+
+;; BountyFactory_BountyEscrow.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+forall X -> X __tact_not_null(X x) impure inline {
+    throw_if(128, null?(x)); return x;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
+}
+
+() __tact_prepare_random() impure inline {
+    if (null?(__tact_randomized)) {
+        randomize_lt();
+        __tact_randomized = true;
+    }
+}
+
+int __tact_slice_eq(slice a, slice b) inline {
+    return (a.slice_hash() ==  b.slice_hash());
+}
+
+forall X0, X1, X2, X3, X4 -> tuple __tact_tuple_create_5((X0, X1, X2, X3, X4) v) asm """
+    5 TUPLE
+""";
+
+forall X0, X1, X2, X3, X4 -> (X0, X1, X2, X3, X4) __tact_tuple_destroy_5(tuple v) asm """
+    5 UNTUPLE
+""";
+
+slice __tact_dict_get_int_slice(cell d, int kl, int k) inline {
+    var (r, ok) = idict_get?(d, kl, k);
+    if (ok) {
+        return r;
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_int_slice(cell d, int kl, int k, slice v) inline {
+    if (null?(v)) {
+        var (r, ok) = idict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (idict_set(d, kl, k, v), ());
+    }
+}
+
+int __tact_dict_get_int_int(cell d, int kl, int k, int vl) inline {
+    var (r, ok) = idict_get?(d, kl, k);
+    if (ok) {
+        return r~load_int(vl);
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_int_int(cell d, int kl, int k, int v, int vl) inline {
+    if (null?(v)) {
+        var (r, ok) = idict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (idict_set_builder(d, kl, k, begin_cell().store_int(v, vl)), ());
+    }
+}
+
+cell __tact_dict_get_int_cell(cell d, int kl, int k) inline {
+    var (r, ok) = idict_get_ref?(d, kl, k);
+    if (ok) {
+        return r;
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_int_cell(cell d, int kl, int k, cell v) inline {
+    if (null?(v)) {
+        var (r, ok) = idict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (idict_set_ref(d, kl, k, v), ());
+    }
+}
+
+int $global_nativeRandomInterval(int $max) impure asm """
+    RAND
+""";
+
+int $global_random(int $min, int $max) impure inline {
+    __tact_prepare_random();
+    return ($min + $global_nativeRandomInterval(($max - $min)));
+}
+
+int $global_min(int $x, int $y) impure asm """
+    MIN
+""";
+
+() $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+    STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+    // → Stack state
+    // s0: Builder
+    // s1: `data`
+    // s2: `code`
+    // s3: `body`
+    // s4: `mode`
+
+    // Group 2: Placing the Builder after code and data, then checking those for nullability
+    s2 XCHG0
+    DUP2
+    ISNULL
+    SWAP
+    ISNULL
+    AND
+    // → Stack state
+    // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+    // s1: `code`
+    // s2: `data`
+    // s3: Builder
+    // s4: `body`
+    // s5: `mode`
+
+    // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+    <{
+        DROP2 // drop `data` and `code`, since either of those is null
+        b{0} STSLICECONST
+    }> PUSHCONT
+
+    // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+    <{
+        // _ split_depth:(Maybe (## 5))
+        //   special:(Maybe TickTock)
+        //   code:(Maybe ^Cell)
+        //   data:(Maybe ^Cell)
+        //   library:(Maybe ^Cell)
+        // = StateInit;
+        ROT                // place message Builder on top
+        b{10} STSLICECONST // store Maybe = true, Either = false
+        // Start composing inlined StateInit
+        b{00} STSLICECONST // store split_depth and special first
+        STDICT             // store code
+        STDICT             // store data
+        b{0} STSLICECONST  // store library
+    }> PUSHCONT
+
+    // Group 3: IFELSE that does the branching shown above
+    IFELSE
+    // → Stack state
+    // s0: Builder
+    // s1: null or StateInit
+    // s2: `body`
+    // s3: `mode`
+
+    // Group 4: Finalizing the message
+    STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+    ENDC
+    // → Stack state
+    // s0: Cell
+    // s1: `mode`
+
+    // Group 5: Sending the message, with `mode` on top
+    SWAP
+    SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+""";
+
+int $global_now() impure asm """
+    NOW
+""";
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_owner((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_14 = $self'owner;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_14);
+}
+
+;; BountyFactory_BountyEscrow.constants.fc
+;; String "active"
+slice __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717() asm """
+    B{b5ee9c7241010101000800000c6163746976659582913a} B>boc <s PUSHSLICE
+""";
+
+;; String "review"
+slice __gen_slice_string_2b619c331d685174dbb6ac95cc47afd874b49b4ad08a1595bc2ed649c9f002b2() asm """
+    B{b5ee9c7241010101000800000c72657669657798d5661b} B>boc <s PUSHSLICE
+""";
+
+;; String "manual"
+slice __gen_slice_string_3728345577d9175dc9c0490a3886394391baecc8146b746d3b8ac6f14c93121d() asm """
+    B{b5ee9c7241010101000800000c6d616e75616ca28730d3} B>boc <s PUSHSLICE
+""";
+
+;; String "completed"
+slice __gen_slice_string_88b00a90397956c5f580cf453e630cbb5b54b2ef6ebb97f115cd2bfdde1ba9db() asm """
+    B{b5ee9c7241010101000b000012636f6d706c657465642b5025c4} B>boc <s PUSHSLICE
+""";
+
+;; String "cancelled"
+slice __gen_slice_string_99f5b083e5ba06a9ff805d0497b9fb9fdd7e36318c813a7e41ea1c2047168b42() asm """
+    B{b5ee9c7241010101000b00001263616e63656c6c6564424c4ae7} B>boc <s PUSHSLICE
+""";
+
+;; BountyFactory_BountyEscrow.storage.fc
+;;
+;; Type: SendParameters
+;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
+;;
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode(slice $to, int $value, int $mode) inline {
+    return ($mode, null(), null(), null(), $value, $to, true);
+}
+
+;;
+;; Type: Submission
+;; TLB: _ id:int257 submitter:address proofUrl:^string submittedAt:int257 approved:bool = Submission
+;;
+
+builder $Submission$_store(builder build_0, (int, slice, slice, int, int) v) inline {
+    var (v'id, v'submitter, v'proofUrl, v'submittedAt, v'approved) = v;
+    build_0 = build_0.store_int(v'id, 257);
+    build_0 = build_0.store_slice(v'submitter);
+    build_0 = build_0.store_builder_ref(begin_cell().store_slice(v'proofUrl));
+    build_0 = build_0.store_int(v'submittedAt, 257);
+    build_0 = build_0.store_int(v'approved, 1);
+    return build_0;
+}
+
+cell $Submission$_store_cell((int, slice, slice, int, int) v, builder b) inline {
+    return $Submission$_store(b, v).end_cell();
+}
+
+(slice, ((int, slice, slice, int, int))) $Submission$_load(slice sc_0) inline {
+    var v'id = sc_0~load_int(257);
+    var v'submitter = sc_0~load_msg_addr();
+    var v'proofUrl = sc_0~load_ref().begin_parse();
+    var v'submittedAt = sc_0~load_int(257);
+    var v'approved = sc_0~load_int(1);
+    return (sc_0, (v'id, v'submitter, v'proofUrl, v'submittedAt, v'approved));
+}
+
+tuple $Submission$_as_optional((int, slice, slice, int, int) v) inline {
+    var (v'id, v'submitter, v'proofUrl, v'submittedAt, v'approved) = v;
+    return __tact_tuple_create_5(v'id, v'submitter, v'proofUrl, v'submittedAt, v'approved);
+}
+
+tuple $Submission$_load_opt(cell cl) inline {
+    if (null?(cl)) {
+        return null();
+    }
+    var sc = cl.begin_parse();
+    return $Submission$_as_optional(sc~$Submission$_load());
+}
+
+((int, slice, slice, int, int)) $Submission$_not_null(tuple v) inline {
+    throw_if(128, null?(v));
+    var (int vvv'id, slice vvv'submitter, slice vvv'proofUrl, int vvv'submittedAt, int vvv'approved) = __tact_tuple_destroy_5(v);
+    return (vvv'id, vvv'submitter, vvv'proofUrl, vvv'submittedAt, vvv'approved);
+}
+
+((int, slice, slice, int, int)) $Submission$_constructor_id_submitter_proofUrl_submittedAt_approved(int $id, slice $submitter, slice $proofUrl, int $submittedAt, int $approved) inline {
+    return ($id, $submitter, $proofUrl, $submittedAt, $approved);
+}
+
+;;
+;; Type: BountyEscrow
+;; TLB: _ owner:address title:^string description:^string bountyType:^string poolAmount:int257 winnerCount:int257 perWinnerAmount:int257 platformFeeBps:int257 platformAddress:address winnerSelection:^string verification:^string verificationRule:^string createdAt:int257 durationSeconds:int257 reviewWindowSeconds:int257 endsAt:int257 reviewEndsAt:int257 status:^string submissions:dict<int, ^Submission{id:int257,submitter:address,proofUrl:^string,submittedAt:int257,approved:bool}> submissionCount:int257 nextSubmissionId:int257 winners:dict<int, address> winnerCountFinal:int257 payoutDone:bool = BountyEscrow
+;;
+
+builder $BountyEscrow$_store(builder build_0, (slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) v) inline {
+    var (v'owner, v'title, v'description, v'bountyType, v'poolAmount, v'winnerCount, v'perWinnerAmount, v'platformFeeBps, v'platformAddress, v'winnerSelection, v'verification, v'verificationRule, v'createdAt, v'durationSeconds, v'reviewWindowSeconds, v'endsAt, v'reviewEndsAt, v'status, v'submissions, v'submissionCount, v'nextSubmissionId, v'winners, v'winnerCountFinal, v'payoutDone) = v;
+    build_0 = build_0.store_slice(v'owner);
+    build_0 = build_0.store_builder_ref(begin_cell().store_slice(v'title));
+    var build_1 = begin_cell();
+    build_1 = build_1.store_builder_ref(begin_cell().store_slice(v'description));
+    build_1 = build_1.store_builder_ref(begin_cell().store_slice(v'bountyType));
+    build_1 = build_1.store_int(v'poolAmount, 257);
+    build_1 = build_1.store_int(v'winnerCount, 257);
+    build_1 = build_1.store_int(v'perWinnerAmount, 257);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_int(v'platformFeeBps, 257);
+    build_2 = build_2.store_slice(v'platformAddress);
+    build_2 = build_2.store_builder_ref(begin_cell().store_slice(v'winnerSelection));
+    build_2 = build_2.store_builder_ref(begin_cell().store_slice(v'verification));
+    build_2 = build_2.store_builder_ref(begin_cell().store_slice(v'verificationRule));
+    build_2 = build_2.store_int(v'createdAt, 257);
+    var build_3 = begin_cell();
+    build_3 = build_3.store_int(v'durationSeconds, 257);
+    build_3 = build_3.store_int(v'reviewWindowSeconds, 257);
+    build_3 = build_3.store_int(v'endsAt, 257);
+    var build_4 = begin_cell();
+    build_4 = build_4.store_int(v'reviewEndsAt, 257);
+    build_4 = build_4.store_builder_ref(begin_cell().store_slice(v'status));
+    build_4 = build_4.store_dict(v'submissions);
+    build_4 = build_4.store_int(v'submissionCount, 257);
+    build_4 = build_4.store_int(v'nextSubmissionId, 257);
+    build_4 = build_4.store_dict(v'winners);
+    var build_5 = begin_cell();
+    build_5 = build_5.store_int(v'winnerCountFinal, 257);
+    build_5 = build_5.store_int(v'payoutDone, 1);
+    build_4 = store_builder_ref(build_4, build_5);
+    build_3 = store_builder_ref(build_3, build_4);
+    build_2 = store_builder_ref(build_2, build_3);
+    build_1 = store_builder_ref(build_1, build_2);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+(slice, ((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int))) $BountyEscrow$_load(slice sc_0) inline {
+    var v'owner = sc_0~load_msg_addr();
+    var v'title = sc_0~load_ref().begin_parse();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'description = sc_1~load_ref().begin_parse();
+    var v'bountyType = sc_1~load_ref().begin_parse();
+    var v'poolAmount = sc_1~load_int(257);
+    var v'winnerCount = sc_1~load_int(257);
+    var v'perWinnerAmount = sc_1~load_int(257);
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'platformFeeBps = sc_2~load_int(257);
+    var v'platformAddress = sc_2~load_msg_addr();
+    var v'winnerSelection = sc_2~load_ref().begin_parse();
+    var v'verification = sc_2~load_ref().begin_parse();
+    var v'verificationRule = sc_2~load_ref().begin_parse();
+    var v'createdAt = sc_2~load_int(257);
+    slice sc_3 = sc_2~load_ref().begin_parse();
+    var v'durationSeconds = sc_3~load_int(257);
+    var v'reviewWindowSeconds = sc_3~load_int(257);
+    var v'endsAt = sc_3~load_int(257);
+    slice sc_4 = sc_3~load_ref().begin_parse();
+    var v'reviewEndsAt = sc_4~load_int(257);
+    var v'status = sc_4~load_ref().begin_parse();
+    var v'submissions = sc_4~load_dict();
+    var v'submissionCount = sc_4~load_int(257);
+    var v'nextSubmissionId = sc_4~load_int(257);
+    var v'winners = sc_4~load_dict();
+    slice sc_5 = sc_4~load_ref().begin_parse();
+    var v'winnerCountFinal = sc_5~load_int(257);
+    var v'payoutDone = sc_5~load_int(1);
+    return (sc_0, (v'owner, v'title, v'description, v'bountyType, v'poolAmount, v'winnerCount, v'perWinnerAmount, v'platformFeeBps, v'platformAddress, v'winnerSelection, v'verification, v'verificationRule, v'createdAt, v'durationSeconds, v'reviewWindowSeconds, v'endsAt, v'reviewEndsAt, v'status, v'submissions, v'submissionCount, v'nextSubmissionId, v'winners, v'winnerCountFinal, v'payoutDone));
+}
+
+(slice, ((slice, slice, slice, slice, int, int, slice, slice, slice, int, slice, int))) $BountyEscrow$init$_load(slice sc_0) inline_ref {
+    var v'owner = sc_0~load_msg_addr();
+    var v'title = sc_0~load_ref().begin_parse();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'description = sc_1~load_ref().begin_parse();
+    var v'bountyType = sc_1~load_ref().begin_parse();
+    var v'poolAmount = sc_1~load_int(257);
+    var v'winnerCount = sc_1~load_int(257);
+    var v'winnerSelection = sc_1~load_ref().begin_parse();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'verification = sc_2~load_ref().begin_parse();
+    var v'verificationRule = sc_2~load_ref().begin_parse();
+    var v'platformFeeBps = sc_2~load_int(257);
+    var v'platformAddress = sc_2~load_msg_addr();
+    var v'createdAt = sc_2~load_int(257);
+    return (sc_0, (v'owner, v'title, v'description, v'bountyType, v'poolAmount, v'winnerCount, v'winnerSelection, v'verification, v'verificationRule, v'platformFeeBps, v'platformAddress, v'createdAt));
+}
+
+(slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $BountyEscrow$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$BountyEscrow$_load();
+    }
+    else {
+        (slice $owner, slice $title, slice $description, slice $bountyType, int $poolAmount, int $winnerCount, slice $winnerSelection, slice $verification, slice $verificationRule, int $platformFeeBps, slice $platformAddress, int $createdAt) = $sc~$BountyEscrow$init$_load();
+        $sc.end_parse();
+        return $BountyEscrow$_contract_init($owner, $title, $description, $bountyType, $poolAmount, $winnerCount, $winnerSelection, $verification, $verificationRule, $platformFeeBps, $platformAddress, $createdAt);
+    }
+}
+
+() $BountyEscrow$_contract_store((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_int(true, 1);
+    b = $BountyEscrow$_store(b, v);
+    set_data(b.end_cell());
+}
+
+;;
+;; Contract BountyEscrow functions
+;;
+
+(slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $BountyEscrow$_contract_init(slice $owner, slice $title, slice $description, slice $bountyType, int $poolAmount, int $winnerCount, slice $winnerSelection, slice $verification, slice $verificationRule, int $platformFeeBps, slice $platformAddress, int $createdAt) impure inline {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = (null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null());
+    $self'owner = $owner;
+    $self'title = $title;
+    $self'description = $description;
+    $self'bountyType = $bountyType;
+    $self'poolAmount = $poolAmount;
+    $self'winnerCount = $winnerCount;
+    $self'perWinnerAmount = ($poolAmount / $winnerCount);
+    $self'winnerSelection = $winnerSelection;
+    $self'verification = $verification;
+    $self'verificationRule = $verificationRule;
+    $self'platformFeeBps = $platformFeeBps;
+    $self'platformAddress = $platformAddress;
+    $self'createdAt = $createdAt;
+    $self'durationSeconds = 86400;
+    $self'reviewWindowSeconds = 86400;
+    $self'endsAt = ($createdAt + 86400);
+    $self'reviewEndsAt = ($self'endsAt + 86400);
+    $self'status = __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717();
+    $self'submissions = null();
+    $self'submissionCount = 0;
+    $self'nextSubmissionId = 0;
+    $self'winners = null();
+    $self'winnerCountFinal = 0;
+    $self'payoutDone = false;
+    return ($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_title((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_0 = $self'title;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_0);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_description((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_1 = $self'description;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_1);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_bountyType((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_2 = $self'bountyType;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_2);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_poolAmount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_3 = $self'poolAmount;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_3);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_winnerCount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_4 = $self'winnerCount;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_4);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_perWinnerAmount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_5 = $self'perWinnerAmount;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_5);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_winnerSelection((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_6 = $self'winnerSelection;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_6);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_verification((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_7 = $self'verification;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_7);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), slice) $BountyEscrow$_fun_status((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_8 = $self'status;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_8);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_endsAt((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_9 = $self'endsAt;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_9);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_reviewEndsAt((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_10 = $self'reviewEndsAt;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_10);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_submissionCount((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_11 = $self'submissionCount;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_11);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_payoutDone((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_12 = $self'payoutDone;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_12);
+}
+
+((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int), int) $BountyEscrow$_fun_winnerCountFinal((slice, slice, slice, slice, int, int, int, int, slice, slice, slice, slice, int, int, int, int, int, slice, cell, int, int, cell, int, int) $self) impure inline_ref {
+    var (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone)) = $self;
+    var $fresh$ret_13 = $self'winnerCountFinal;
+    return (($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone), $fresh$ret_13);
+}
+
+;;
+;; Get methods of a Contract BountyEscrow
+;;
+
+_ %title() method_id(84137) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_title();
+    return res;
+}
+
+_ %description() method_id(65569) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_description();
+    return res;
+}
+
+_ %bountyType() method_id(112386) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_bountyType();
+    return res;
+}
+
+_ %poolAmount() method_id(111903) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_poolAmount();
+    return res;
+}
+
+_ %winnerCount() method_id(79844) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_winnerCount();
+    return res;
+}
+
+_ %perWinnerAmount() method_id(78603) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_perWinnerAmount();
+    return res;
+}
+
+_ %winnerSelection() method_id(91182) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_winnerSelection();
+    return res;
+}
+
+_ %verification() method_id(98063) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_verification();
+    return res;
+}
+
+_ %status() method_id(101642) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_status();
+    return res;
+}
+
+_ %endsAt() method_id(121080) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_endsAt();
+    return res;
+}
+
+_ %reviewEndsAt() method_id(116463) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_reviewEndsAt();
+    return res;
+}
+
+_ %submissionCount() method_id(110190) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_submissionCount();
+    return res;
+}
+
+_ %payoutDone() method_id(100733) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_payoutDone();
+    return res;
+}
+
+_ %winnerCountFinal() method_id(83506) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_winnerCountFinal();
+    return res;
+}
+
+_ %owner() method_id(83229) {
+    var self = $BountyEscrow$_contract_load();
+    var res = self~$BountyEscrow$_fun_owner();
+    return res;
+}
+
+;;
+;; Routing of a Contract BountyEscrow
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var ($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone) = $BountyEscrow$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    int op = 0;
+    int in_msg_length = slice_bits(in_msg);
+    if (in_msg_length >= 32) {
+        op = in_msg~load_uint(32);
+        ;; Receive SubmitProof message
+        if (op == 339648954) {
+            var $msg'proofUrl = in_msg~load_ref().begin_parse();
+            throw_unless(63984, __tact_slice_eq($self'status, __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717()));
+            throw_unless(36859, ($global_now() <= $self'endsAt));
+            var ($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved) = $Submission$_constructor_id_submitter_proofUrl_submittedAt_approved($self'nextSubmissionId, __tact_context_get_sender(), $msg'proofUrl, $global_now(), false);
+            $self'submissions~__tact_dict_set_int_cell(257, $self'nextSubmissionId, $Submission$_store_cell(($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved), begin_cell()));
+            $self'nextSubmissionId = ($self'nextSubmissionId + 1);
+            $self'submissionCount = ($self'submissionCount + 1);
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        
+        ;; Receive ApproveSubmission message
+        if (op == 1750743222) {
+            var $msg'submissionId = in_msg~load_int(257);
+            throw_unless(35499, ( equal_slices_bits($self'owner, __tact_context_get_sender()) ));
+            throw_unless(39632, ( (__tact_slice_eq($self'status, __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717())) ? (true) : (__tact_slice_eq($self'status, __gen_slice_string_2b619c331d685174dbb6ac95cc47afd874b49b4ad08a1595bc2ed649c9f002b2())) ));
+            tuple $optSub = $Submission$_load_opt(__tact_dict_get_int_cell($self'submissions, 257, $msg'submissionId));
+            throw_unless(60441, (~ null?($optSub)));
+            var ($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved) = $Submission$_not_null($optSub);
+            $sub'approved = true;
+            $self'submissions~__tact_dict_set_int_cell(257, $msg'submissionId, $Submission$_store_cell(($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved), begin_cell()));
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        
+        ;; Receive RejectSubmission message
+        if (op == 2450262874) {
+            var $msg'submissionId = in_msg~load_int(257);
+            throw_unless(35499, ( equal_slices_bits($self'owner, __tact_context_get_sender()) ));
+            throw_unless(39632, ( (__tact_slice_eq($self'status, __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717())) ? (true) : (__tact_slice_eq($self'status, __gen_slice_string_2b619c331d685174dbb6ac95cc47afd874b49b4ad08a1595bc2ed649c9f002b2())) ));
+            tuple $optSub = $Submission$_load_opt(__tact_dict_get_int_cell($self'submissions, 257, $msg'submissionId));
+            throw_unless(60441, (~ null?($optSub)));
+            var ($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved) = $Submission$_not_null($optSub);
+            $sub'approved = false;
+            $self'submissions~__tact_dict_set_int_cell(257, $msg'submissionId, $Submission$_store_cell(($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved), begin_cell()));
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        
+        ;; Receive SelectWinners message
+        if (op == 3480222973) {
+            var $msg'count = in_msg~load_int(257);
+            var $msg'winnerIds = in_msg~load_dict();
+            throw_unless(35499, ( equal_slices_bits($self'owner, __tact_context_get_sender()) ));
+            throw_unless(38675, __tact_slice_eq($self'winnerSelection, __gen_slice_string_3728345577d9175dc9c0490a3886394391baecc8146b746d3b8ac6f14c93121d()));
+            throw_unless(27493, __tact_slice_eq($self'status, __gen_slice_string_2b619c331d685174dbb6ac95cc47afd874b49b4ad08a1595bc2ed649c9f002b2()));
+            int $count = 0;
+            int $remainingPool = $self'poolAmount;
+            int $platformFee = (($self'perWinnerAmount * $self'platformFeeBps) / 10000);
+            int $payoutPerWinner = ($self'perWinnerAmount - $platformFee);
+            $global_send($SendParameters$_constructor_to_value_mode($self'platformAddress, ($platformFee * $msg'count), 3));
+            int $idx = 0;
+            repeat ($msg'count) {
+                slice $winnerAddr = __tact_not_null(__tact_dict_get_int_slice($msg'winnerIds, 257, $idx));
+                $self'winners~__tact_dict_set_int_slice(257, $idx, $winnerAddr);
+                $global_send($SendParameters$_constructor_to_value_mode($winnerAddr, $payoutPerWinner, 3));
+                $idx = ($idx + 1);
+            }
+            $self'winnerCountFinal = $msg'count;
+            $self'payoutDone = true;
+            $self'status = __gen_slice_string_88b00a90397956c5f580cf453e630cbb5b54b2ef6ebb97f115cd2bfdde1ba9db();
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        
+        ;; Receive CancelBounty message
+        if (op == 111578025) {
+            var $msg = empty_tuple();
+            throw_unless(35499, ( equal_slices_bits($self'owner, __tact_context_get_sender()) ));
+            throw_unless(58441, __tact_slice_eq($self'status, __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717()));
+            $global_send($SendParameters$_constructor_to_value_mode($self'owner, $self'poolAmount, 3));
+            $self'status = __gen_slice_string_99f5b083e5ba06a9ff805d0497b9fb9fdd7e36318c813a7e41ea1c2047168b42();
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        
+        ;; Receive WithdrawExcess message
+        if (op == 1401221694) {
+            var $msg = empty_tuple();
+            throw_unless(58786, $self'payoutDone);
+            throw_unless(35499, ( equal_slices_bits($self'owner, __tact_context_get_sender()) ));
+            int $usedPool = ($self'perWinnerAmount * $self'winnerCountFinal);
+            int $excess = ($self'poolAmount - $usedPool);
+            if (($excess > 0)) {
+                $global_send($SendParameters$_constructor_to_value_mode($self'owner, $excess, 3));
+            }
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        
+    }
+    ;; Receive empty message
+    if ((op == 0) & (in_msg_length <= 32)) {
+        $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+        return ();
+    }
+    ;; Empty Receiver and Text Receivers
+    var text_op = slice_hash(in_msg);
+    ;; Receive "auto_complete" message
+    if (text_op == 0x00e0d8b11c4d4a9dacaeb3b6a01cd757d3bd7b06de9c4482ca16153ad8cf2de8) {
+        throw_unless(40269, ($global_now() > $self'reviewEndsAt));
+        throw_unless(7084, ( (__tact_slice_eq($self'status, __gen_slice_string_284f36a14d218034c13f97878e31af44b766a8cc887f5dd2fc5722f6f4af8717())) ? (true) : (__tact_slice_eq($self'status, __gen_slice_string_2b619c331d685174dbb6ac95cc47afd874b49b4ad08a1595bc2ed649c9f002b2())) ));
+        throw_unless(56464, (~ $self'payoutDone));
+        cell $approvedIds = null();
+        int $approvedCount = 0;
+        int $i = 0;
+        repeat ($self'submissionCount) {
+            tuple $optSub = $Submission$_load_opt(__tact_dict_get_int_cell($self'submissions, 257, $i));
+            if ((~ null?($optSub))) {
+                var ($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved) = $Submission$_not_null($optSub);
+                if ($sub'approved) {
+                    $approvedIds~__tact_dict_set_int_int(257, $approvedCount, $sub'id, 257);
+                    $approvedCount = ($approvedCount + 1);
+                }
+            }
+            $i = ($i + 1);
+        }
+        ifnot ($approvedCount) {
+            $global_send($SendParameters$_constructor_to_value_mode($self'owner, $self'poolAmount, 3));
+            $self'status = __gen_slice_string_99f5b083e5ba06a9ff805d0497b9fb9fdd7e36318c813a7e41ea1c2047168b42();
+            $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+            return ();
+        }
+        int $actualWinners = $global_min($self'winnerCount, $approvedCount);
+        int $platformFee = (($self'perWinnerAmount * $self'platformFeeBps) / 10000);
+        int $payoutPerWinner = ($self'perWinnerAmount - $platformFee);
+        $global_send($SendParameters$_constructor_to_value_mode($self'platformAddress, ($platformFee * $actualWinners), 3));
+        cell $selected = null();
+        int $winnerIdx = 0;
+        repeat ($actualWinners) {
+            int $randIdx = $global_random(0, $approvedCount);
+            int $subId = __tact_not_null(__tact_dict_get_int_int($approvedIds, 257, $randIdx, 257));
+            var ($sub'id, $sub'submitter, $sub'proofUrl, $sub'submittedAt, $sub'approved) = $Submission$_not_null($Submission$_load_opt(__tact_dict_get_int_cell($self'submissions, 257, $subId)));
+            if (null?(__tact_dict_get_int_int($selected, 257, $randIdx, 1))) {
+                $selected~__tact_dict_set_int_int(257, $randIdx, true, 1);
+                $self'winners~__tact_dict_set_int_slice(257, $winnerIdx, $sub'submitter);
+                $global_send($SendParameters$_constructor_to_value_mode($sub'submitter, $payoutPerWinner, 3));
+                $winnerIdx = ($winnerIdx + 1);
+            }
+        }
+        $self'winnerCountFinal = $winnerIdx;
+        $self'payoutDone = true;
+        $self'status = __gen_slice_string_88b00a90397956c5f580cf453e630cbb5b54b2ef6ebb97f115cd2bfdde1ba9db();
+        $BountyEscrow$_contract_store(($self'owner, $self'title, $self'description, $self'bountyType, $self'poolAmount, $self'winnerCount, $self'perWinnerAmount, $self'platformFeeBps, $self'platformAddress, $self'winnerSelection, $self'verification, $self'verificationRule, $self'createdAt, $self'durationSeconds, $self'reviewWindowSeconds, $self'endsAt, $self'reviewEndsAt, $self'status, $self'submissions, $self'submissionCount, $self'nextSubmissionId, $self'winners, $self'winnerCountFinal, $self'payoutDone));
+        return ();
+    }
+    ;; Throw if not handled
+    throw(130);
+}
+
+
+() __tact_selector_hack_asm() impure asm """
+@atend @ 1 {
+        execute current@ context@ current!
+        {
+            // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+            // We want to extract recv_internal/recv_external from the dict and select needed function
+            // not by jumping to the needed function by it's index, but by using usual IF statements.
+
+            }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+
+            <{ // Start of the new code builder
+                SETCP0
+                // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                swap
+                // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                <s ref@
+
+                // Extract the recv_internal from the dict
+                dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                swap
+
+                // Delete the recv_internal from the dict
+                0 swap @procdictkeylen idict- drop
+                // Delete the recv_external from the dict (it's okay if it's not there)
+                -1 swap @procdictkeylen idict- drop
+                // Delete the __tact_selector_hack from the dict
+                65535 swap @procdictkeylen idict- drop
+
+                // Bring the code builder from the bottom of the stack
+                // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                depth 1- roll
+                // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                swap
+
+                // Check if the dict is empty
+                dup null?
+                // Store a copy of this flag in the bottom of the stack
+                dup depth 1- -roll
+                {
+                    // If the dict is empty, just drop it (it will be null if it's empty)
+                    drop
+                }
+                {
+                    // If the dict is not empty, prepare continuation to be stored in c3
+                    <{
+                        // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                        swap @procdictkeylen DICTPUSHCONST
+                        // Jump to the needed function by it's index
+                        DICTIGETJMPZ
+                        // If such key is not found, throw 11 along with the key as an argument
+                        11 THROWARG
+                    }> PUSHCONT
+                    // Store the continuation in c3
+                    c3 POP
+                } cond
+
+                // Function id is on top of the (runtime) stack
+                DUP IFNOTJMP:<{
+                    // place recv_internal here
+                    DROP swap @addop
+                }>
+
+                // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                depth 1- roll
+                {
+                    // If the dict is empty, throw 11
+                    11 THROWARG
+                }
+                {
+                    // If the dict is not empty, jump to continuation from c3
+                    c3 PUSH JMPX
+                } cond
+            }> b>
+        } : }END>c
+        current@ context! current!
+    } does @atend !
+""";
+
+() __tact_selector_hack() method_id(65535) {
+    return __tact_selector_hack_asm();
+}

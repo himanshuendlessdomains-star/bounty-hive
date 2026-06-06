@@ -1,7 +1,6 @@
 // BountyEscrow — holds funds for a single bounty, manages submissions & payouts
 
 import "@stdlib/ownable";
-import "./libs/random.tact";
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 
@@ -18,7 +17,8 @@ message RejectSubmission {
 }
 
 message SelectWinners {
-    winnerIds: map<Int as uint256>;
+    count: Int;
+    winnerIds: map<Int, Address>;
 }
 
 message CancelBounty {}
@@ -38,6 +38,8 @@ struct Submission {
 // ─── Contract ────────────────────────────────────────────────────────────────
 
 contract BountyEscrow with Ownable {
+
+    owner: Address;
 
     // Identity
     title: String;
@@ -144,7 +146,7 @@ contract BountyEscrow with Ownable {
         require(self.status == "active" || self.status == "review", "Not in review period");
 
         let optSub = self.submissions.get(msg.submissionId);
-        require(!!optSub, "Submission not found");
+        require(optSub != null, "Submission not found");
 
         let sub = optSub!!;
         sub.approved = true;
@@ -156,7 +158,7 @@ contract BountyEscrow with Ownable {
         require(self.status == "active" || self.status == "review", "Not in review period");
 
         let optSub = self.submissions.get(msg.submissionId);
-        require(!!optSub, "Submission not found");
+        require(optSub != null, "Submission not found");
 
         let sub = optSub!!;
         sub.approved = false;
@@ -181,13 +183,13 @@ contract BountyEscrow with Ownable {
         // Send platform fee
         send(SendParameters {
             to: self.platformAddress,
-            value: platformFee * msg.winnerIds.size(),
+            value: platformFee * msg.count,
             mode: SendPayGasSeparately + SendIgnoreErrors,
         });
 
         // Send payouts to each winner
         let idx: Int = 0;
-        repeat (msg.winnerIds.size()) {
+        repeat (msg.count) {
             let winnerAddr = msg.winnerIds.get(idx)!!;
             self.winners.set(idx, winnerAddr);
 
@@ -200,7 +202,7 @@ contract BountyEscrow with Ownable {
             idx = idx + 1;
         }
 
-        self.winnerCountFinal = msg.winnerIds.size();
+        self.winnerCountFinal = msg.count;
         self.payoutDone = true;
         self.status = "completed";
     }
@@ -236,7 +238,7 @@ contract BountyEscrow with Ownable {
         let i: Int = 0;
         repeat (self.submissionCount) {
             let optSub = self.submissions.get(i);
-            if (optSub) {
+            if (optSub != null) {
                 let sub = optSub!!;
                 if (sub.approved) {
                     approvedIds.set(approvedCount, sub.id);
@@ -254,7 +256,7 @@ contract BountyEscrow with Ownable {
                 mode: SendPayGasSeparately + SendIgnoreErrors,
             });
             self.status = "cancelled";
-            return ();
+            return;
         }
 
         // For draw mode: randomly select winners from approved submissions
@@ -269,18 +271,17 @@ contract BountyEscrow with Ownable {
             mode: SendPayGasSeparately + SendIgnoreErrors,
         });
 
-        // Random draw using on-chain randomness
-        let seed: Int = now() + curLt();
+        // Random draw using on-chain randomness (built-in Tact random)
         let selected: map<Int, Bool> = emptyMap();
         let winnerIdx: Int = 0;
 
         repeat (actualWinners) {
-            let randIdx = randomInt(seed + winnerIdx) % approvedCount;
+            let randIdx = random(0, approvedCount);
             let subId = approvedIds.get(randIdx)!!;
             let sub = self.submissions.get(subId)!!;
 
-            // Avoid duplicates
-            if (!selected.get(randIdx)!!) {
+            // Avoid duplicates (slot not yet taken)
+            if (selected.get(randIdx) == null) {
                 selected.set(randIdx, true);
 
                 self.winners.set(winnerIdx, sub.submitter);

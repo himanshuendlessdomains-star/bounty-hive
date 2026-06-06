@@ -1,0 +1,605 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; BountyFactory_BountyFactory.headers.fc
+;;
+;; Header files for BountyFactory
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; __tact_not_null
+forall X -> X __tact_not_null(X x) impure inline;
+
+;; __tact_context_get
+(int, slice, int, slice) __tact_context_get() inline;
+
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
+
+;; __tact_slice_eq
+int __tact_slice_eq(slice a, slice b) inline;
+
+;; __tact_dict_get_int_slice
+slice __tact_dict_get_int_slice(cell d, int kl, int k) inline;
+
+;; __tact_dict_set_int_slice
+(cell, ()) __tact_dict_set_int_slice(cell d, int kl, int k, slice v) inline;
+
+;; $BountyFactory$_store
+builder $BountyFactory$_store(builder build_0, (slice, int, slice, int, cell) v) inline;
+
+;; $BountyFactory$_load
+(slice, ((slice, int, slice, int, cell))) $BountyFactory$_load(slice sc_0) inline;
+
+;; $Context$_get_value
+_ $Context$_get_value((int, slice, int, slice) v) inline;
+
+;; $BountyEscrow$init$_store
+builder $BountyEscrow$init$_store(builder build_0, (slice, slice, slice, slice, int, int, slice, slice, slice, int, slice, int) v) inline;
+
+;; $BountyFactory$init$_load
+(slice, ((int, slice))) $BountyFactory$init$_load(slice sc_0) inline;
+
+;; $BountyFactory$_contract_init
+(slice, int, slice, int, cell) $BountyFactory$_contract_init(int $platformFeeBps, slice $platformAddress) impure inline;
+
+;; $BountyFactory$_contract_load
+(slice, int, slice, int, cell) $BountyFactory$_contract_load() impure inline;
+
+;; $BountyFactory$_contract_store
+() $BountyFactory$_contract_store((slice, int, slice, int, cell) v) impure inline;
+
+;; $Cell$_fun_asSlice
+slice $Cell$_fun_asSlice(cell $self) impure inline;
+
+;; $global_newAddress
+slice $global_newAddress(int $chain, int $hash) impure inline;
+
+;; $global_contractAddressExt
+slice $global_contractAddressExt(int $chain, cell $code, cell $data) impure inline;
+
+;; $global_contractAddress
+slice $global_contractAddress((cell, cell) $s) impure inline;
+
+;; $BountyEscrow$_init_child
+(cell, cell) $BountyEscrow$_init_child(slice $owner, slice $title, slice $description, slice $bountyType, int $poolAmount, int $winnerCount, slice $winnerSelection, slice $verification, slice $verificationRule, int $platformFeeBps, slice $platformAddress, int $createdAt) inline_ref;
+
+;; $BountyFactory$_fun_bountyCount
+((slice, int, slice, int, cell), int) $BountyFactory$_fun_bountyCount((slice, int, slice, int, cell) $self) impure inline_ref;
+
+;; $BountyFactory$_fun_platformFeeBps
+((slice, int, slice, int, cell), int) $BountyFactory$_fun_platformFeeBps((slice, int, slice, int, cell) $self) impure inline_ref;
+
+;; $BountyFactory$_fun_platformAddress
+((slice, int, slice, int, cell), slice) $BountyFactory$_fun_platformAddress((slice, int, slice, int, cell) $self) impure inline_ref;
+
+;; $BountyFactory$_fun_bountyAddress
+((slice, int, slice, int, cell), slice) $BountyFactory$_fun_bountyAddress((slice, int, slice, int, cell) $self, int $index) impure inline_ref;
+
+;; $BountyFactory$_fun_owner
+((slice, int, slice, int, cell), slice) $BountyFactory$_fun_owner((slice, int, slice, int, cell) $self) impure inline_ref;
+
+;; $SendParameters$_constructor_to_value_mode
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode(slice $to, int $value, int $mode) inline;
+
+
+;; BountyFactory_BountyFactory.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+forall X -> X __tact_not_null(X x) impure inline {
+    throw_if(128, null?(x)); return x;
+}
+
+(int, slice, int, slice) __tact_context_get() inline {
+    return __tact_context;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
+}
+
+int __tact_slice_eq(slice a, slice b) inline {
+    return (a.slice_hash() ==  b.slice_hash());
+}
+
+slice __tact_dict_get_int_slice(cell d, int kl, int k) inline {
+    var (r, ok) = idict_get?(d, kl, k);
+    if (ok) {
+        return r;
+    } else {
+        return null();
+    }
+}
+
+(cell, ()) __tact_dict_set_int_slice(cell d, int kl, int k, slice v) inline {
+    if (null?(v)) {
+        var (r, ok) = idict_delete?(d, kl, k);
+        return (r, ());
+    } else {
+        return (idict_set(d, kl, k, v), ());
+    }
+}
+
+builder $global_beginCell() impure asm """
+    NEWC
+""";
+
+int $global_contractHash(cell $code, cell $data) impure asm """
+    s0 PUSH HASHCU // `data` hash
+    s2 PUSH HASHCU // `code` hash
+    SWAP2
+    CDEPTH         // `data` depth
+    SWAP
+    CDEPTH         // `code` depth
+    131380 INT     // (2 << 16) | (1 << 8) | 0x34
+
+    // Group 2: Composition of the Builder
+    NEWC
+    24 STU  // store refs_descriptor | bits_descriptor | data
+    16 STU  // store depth_descriptor for `code`
+    16 STU  // store depth_descriptor for `data`
+    256 STU // store `code` hash
+    256 STU // store `data` hash
+
+    // Group 3: SHA256 hash of the resulting Builder
+    ONE HASHEXT_SHA256
+""";
+
+slice $Slice$_fun_asAddressUnsafe(slice $self) impure asm "NOP";
+
+slice $Cell$_fun_beginParse(cell $self) impure asm """
+    CTOS
+""";
+
+slice $Cell$_fun_asSlice(cell $self) impure inline {
+    var ($self) = $self;
+    return $Cell$_fun_beginParse($self);
+}
+
+cell $Builder$_fun_endCell(builder $self) impure asm """
+    ENDC
+""";
+
+slice $global_newAddress(int $chain, int $hash) impure inline {
+    return $Slice$_fun_asAddressUnsafe($Cell$_fun_asSlice($Builder$_fun_endCell(store_uint(store_int(store_uint($global_beginCell(), 4, 3), $chain, 8), $hash, 256))));
+}
+
+slice $global_contractAddressExt(int $chain, cell $code, cell $data) impure inline {
+    int $hash = $global_contractHash($code, $data);
+    return $global_newAddress($chain, $hash);
+}
+
+slice $global_contractAddress((cell, cell) $s) impure inline {
+    var (($s'code, $s'data)) = $s;
+    return $global_contractAddressExt(0, $s'code, $s'data);
+}
+
+() $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+    STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+    // → Stack state
+    // s0: Builder
+    // s1: `data`
+    // s2: `code`
+    // s3: `body`
+    // s4: `mode`
+
+    // Group 2: Placing the Builder after code and data, then checking those for nullability
+    s2 XCHG0
+    DUP2
+    ISNULL
+    SWAP
+    ISNULL
+    AND
+    // → Stack state
+    // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+    // s1: `code`
+    // s2: `data`
+    // s3: Builder
+    // s4: `body`
+    // s5: `mode`
+
+    // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+    <{
+        DROP2 // drop `data` and `code`, since either of those is null
+        b{0} STSLICECONST
+    }> PUSHCONT
+
+    // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+    <{
+        // _ split_depth:(Maybe (## 5))
+        //   special:(Maybe TickTock)
+        //   code:(Maybe ^Cell)
+        //   data:(Maybe ^Cell)
+        //   library:(Maybe ^Cell)
+        // = StateInit;
+        ROT                // place message Builder on top
+        b{10} STSLICECONST // store Maybe = true, Either = false
+        // Start composing inlined StateInit
+        b{00} STSLICECONST // store split_depth and special first
+        STDICT             // store code
+        STDICT             // store data
+        b{0} STSLICECONST  // store library
+    }> PUSHCONT
+
+    // Group 3: IFELSE that does the branching shown above
+    IFELSE
+    // → Stack state
+    // s0: Builder
+    // s1: null or StateInit
+    // s2: `body`
+    // s3: `mode`
+
+    // Group 4: Finalizing the message
+    STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+    ENDC
+    // → Stack state
+    // s0: Cell
+    // s1: `mode`
+
+    // Group 5: Sending the message, with `mode` on top
+    SWAP
+    SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+""";
+
+int $global_now() impure asm """
+    NOW
+""";
+
+((slice, int, slice, int, cell), slice) $BountyFactory$_fun_owner((slice, int, slice, int, cell) $self) impure inline_ref {
+    var (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties)) = $self;
+    var $fresh$ret_39 = $self'owner;
+    return (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties), $fresh$ret_39);
+}
+
+;; BountyFactory_BountyFactory.constants.fc
+;; String "draw"
+slice __gen_slice_string_b06e2f6ff1a217a458de5285280d11f15c0e47d065a96713ffb52bce4d197514() asm """
+    B{b5ee9c7241010101000600000864726177a1a38e27} B>boc <s PUSHSLICE
+""";
+
+;; String "manual"
+slice __gen_slice_string_3728345577d9175dc9c0490a3886394391baecc8146b746d3b8ac6f14c93121d() asm """
+    B{b5ee9c7241010101000800000c6d616e75616ca28730d3} B>boc <s PUSHSLICE
+""";
+
+;; String "auto"
+slice __gen_slice_string_5d9ddc2d8d51d37ba48d50ea85601098279b4c9d3cdff063b172304b0bb9da1a() asm """
+    B{b5ee9c724101010100060000086175746f09cb730d} B>boc <s PUSHSLICE
+""";
+
+;; BountyFactory_BountyFactory.storage.fc
+;;
+;; Type: Context
+;; TLB: _ bounceable:bool sender:address value:int257 raw:^slice = Context
+;;
+
+_ $Context$_get_value((int, slice, int, slice) v) inline {
+    var (v'bounceable, v'sender, v'value, v'raw) = v;
+    return v'value;
+}
+
+;;
+;; Type: SendParameters
+;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
+;;
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode(slice $to, int $value, int $mode) inline {
+    return ($mode, null(), null(), null(), $value, $to, true);
+}
+
+;;
+;; Type: BountyEscrow
+;; TLB: _ owner:address title:^string description:^string bountyType:^string poolAmount:int257 winnerCount:int257 perWinnerAmount:int257 platformFeeBps:int257 platformAddress:address winnerSelection:^string verification:^string verificationRule:^string createdAt:int257 durationSeconds:int257 reviewWindowSeconds:int257 endsAt:int257 reviewEndsAt:int257 status:^string submissions:dict<int, ^Submission{id:int257,submitter:address,proofUrl:^string,submittedAt:int257,approved:bool}> submissionCount:int257 nextSubmissionId:int257 winners:dict<int, address> winnerCountFinal:int257 payoutDone:bool = BountyEscrow
+;;
+
+builder $BountyEscrow$init$_store(builder build_0, (slice, slice, slice, slice, int, int, slice, slice, slice, int, slice, int) v) inline {
+    var (v'owner, v'title, v'description, v'bountyType, v'poolAmount, v'winnerCount, v'winnerSelection, v'verification, v'verificationRule, v'platformFeeBps, v'platformAddress, v'createdAt) = v;
+    build_0 = build_0.store_slice(v'owner);
+    build_0 = build_0.store_builder_ref(begin_cell().store_slice(v'title));
+    var build_1 = begin_cell();
+    build_1 = build_1.store_builder_ref(begin_cell().store_slice(v'description));
+    build_1 = build_1.store_builder_ref(begin_cell().store_slice(v'bountyType));
+    build_1 = build_1.store_int(v'poolAmount, 257);
+    build_1 = build_1.store_int(v'winnerCount, 257);
+    build_1 = build_1.store_builder_ref(begin_cell().store_slice(v'winnerSelection));
+    var build_2 = begin_cell();
+    build_2 = build_2.store_builder_ref(begin_cell().store_slice(v'verification));
+    build_2 = build_2.store_builder_ref(begin_cell().store_slice(v'verificationRule));
+    build_2 = build_2.store_int(v'platformFeeBps, 257);
+    build_2 = build_2.store_slice(v'platformAddress);
+    build_2 = build_2.store_int(v'createdAt, 257);
+    build_1 = store_builder_ref(build_1, build_2);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+cell $BountyEscrow$_child_get_code() impure asm """
+    B{b5ee9c720102500100145a000262ff008e88f4a413f4bcf2c80bed53208e9c30eda2edfb01d072d721d200d200fa4021103450666f04f86102f862e1ed43d90102020271030403fced44d0d200018eb4db3c57181116111711161115111611151114111511141113111411131112111311121111111211111110111111100f11100f550e8eb6db3c0cd1550a5376a9042182015180545041a05301a08b661637469766586d70206d210a11100a10df10ce10ad10ac10ab109a108970e21119945f0f5f0ae0702f303102012005060201201b1c02012007080201200e0f04fbb4043da89a1a400031d69b678ae30222c222e222c222a222c222a2228222a22282226222822262224222622242222222422222220222222201e22201eaa1d1d6db67819a2aa14a6ed5208430402a300a8a08340a6034116cc2c6e8d2eccb0dae040da421422201421be219c215a2158215621342112e1c5b678ae20be1f02f30092e02016a0a0b0004561504faab0bed44d0d200018eb4db3c57181116111711161115111611151114111511141113111411131112111311121111111211111110111111100f11100f550e8eb6db3c0cd1550a5376a9042182015180545041a05301a08b661637469766586d70206d210a11100a10df10ce10ad10ac10ab109a108970e2db3c57105f0f2f300c2e04faabe4ed44d0d200018eb4db3c57181116111711161115111611151114111511141113111411131112111311121111111211111110111111100f11100f550e8eb6db3c0cd1550a5376a9042182015180545041a05301a08b661637469766586d70206d210a11100a10df10ce10ad10ac10ab109a108970e2db3c57105f0f2f300d2e000456110004561202014810110201201718020158121304fbac54f6a268690000c75a6d9e2b8c088b088b888b088a888b088a888a088a888a0889888a088988890889888908888889088888880888888807888807aa87475b6d9e0668aa8529bb548210c100a8c02a2820d02980d045b30b1ba34bb32c36b810369085088805086f8867085688560855884d0844b8716d9e2b882f87c02f30162e04f9a63bda89a1a400031d69b678ae30222c222e222c222a222c222a2228222a22282226222822262224222622242222222422222220222222201e22201eaa1d1d6db67819a2aa14a6ed5208430402a300a8a08340a6034116cc2c6e8d2eccb0dae040da421422201421be219c215a2158215621342112e1c5b678ae20be1f2f30142e04f9a465da89a1a400031d69b678ae30222c222e222c222a222c222a2228222a22282226222822262224222622242222222422222220222222201e22201eaa1d1d6db67819a2aa14a6ed5208430402a300a8a08340a6034116cc2c6e8d2eccb0dae040da421422201421be219c215a2158215621342112e1c5b678ae20be1f2f30152e000456170002210004561604fbb10bbb513434800063ad36cf15c604458445c4458445444584454445044544450444c4450444c4448444c44484444444844444440444444403c44403d543a3adb6cf0334554294ddaa4108608054601514106814c06822d9858dd1a5d9961b5c081b48428444028437c433842b442b042ac42684225c38b6cf15c417c3e02f30192e04fbb3c3fb513434800063ad36cf15c604458445c4458445444584454445044544450444c4450444c4448444c44484444444844444440444444403c44403d543a3adb6cf0334554294ddaa4108608054601514106814c06822d9858dd1a5d9961b5c081b48428444028437c433842b442b042ac42684225c38b6cf15c417c3e02f301a2e00022e00022d0201201d1e0201482a2b0201661f20020120232404faa97ded44d0d200018eb4db3c57181116111711161115111611151114111511141113111411131112111311121111111211111110111111100f11100f550e8eb6db3c0cd1550a5376a9042182015180545041a05301a08b661637469766586d70206d210a11100a10df10ce10ad10ac10ab109a108970e2db3c57105f0f2f30212e04faa90aed44d0d200018eb4db3c57181116111711161115111611151114111511141113111411131112111311121111111211111110111111100f11100f550e8eb6db3c0cd1550a5376a9042182015180545041a05301a08b661637469766586d70206d210a11100a10df10ce10ad10ac10ab109a108970e2db3c57105f0f2f30222e00022000022604fbb39bbb513434800063ad36cf15c604458445c4458445444584454445044544450444c4450444c4448444c44484444444844444440444444403c44403d543a3adb6cf0334554294ddaa4108608054601514106814c06822d9858dd1a5d9961b5c081b48428444028437c433842b442b042ac42684225c38b6cf15c417c3e02f30252e020166262700022404f9a63fda89a1a400031d69b678ae30222c222e222c222a222c222a2228222a22282226222822262224222622242222222422222220222222201e22201eaa1d1d6db67819a2aa14a6ed5208430402a300a8a08340a6034116cc2c6e8d2eccb0dae040da421422201421be219c215a2158215621342112e1c5b678ae20be1f2f30282e04f9a605da89a1a400031d69b678ae30222c222e222c222a222c222a2228222a22282226222822262224222622242222222422222220222222201e22201eaa1d1d6db67819a2aa14a6ed5208430402a300a8a08340a6034116cc2c6e8d2eccb0dae040da421422201421be219c215a2158215621342112e1c5b678ae20be1f2f30292e000456130004561404fbb1bbfb513434800063ad36cf15c604458445c4458445444584454445044544450444c4450444c4448444c44484444444844444440444444403c44403d543a3adb6cf0334554294ddaa4108608054601514106814c06822d9858dd1a5d9961b5c081b48428444028437c433842b442b042ac42684225c38b6cf15c417c3e02f302c2e04fbb23e3b513434800063ad36cf15c604458445c4458445444584454445044544450444c4450444c4448444c44484444444844444440444444403c44403d543a3adb6cf0334554294ddaa4108608054601514106814c06822d9858dd1a5d9961b5c081b48428444028437c433842b442b042ac42684225c38b6cf15c417c3e02f302d2e00022700022800046c8101f0fa40d401d001d401d0d401d001d401d001810101d700810101d700810101d700d430d0810101d700fa40d401d001d401d001d401d001810101d700d430d0810101d700810101d700810101d700d430d0810101d700d401d001f404810101d700810101d700f404d430d0810101d700d20030111611181116320076fa40d401d001d401d0d401d001d401d001810101d700810101d700d401d001d430d0d401d001d401d001810101d700fa40810101d7003010ac10ab03ce5618d74920c21fe30001c00001c121b08ed057171115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df551cc87f01ca0011181117111611151114111311121111111055e0db3cc9ed54e01117f901334e34000c1116111711160456311118d31f218210143ea1babae302218210685a38b6bae302218210920c0b5abae302218210cf6ffcfdba35363738015682e8e0d8b11c4d4a9dacaeb3b6a01cd757d3bd7b06de9c4482ca16153ad8cf2de8bae3025f0f5f09f2c0824501fe3157181117d430d08200f9f08b66163746976658527001f90101f901baf2f482008ffbf82329bbf2f4f842f823245033700443138101015025c855405045810101cf0012ce01c8cecd810101cf00ca00c923103601206e953059f45a30944133f415e201a402a41115111711151114111611141113111511131112111411123901fa3157181117810101d7003082008aabf842561801c705f2f482009ad08b66163746976658527001f90101f901ba917f8e118b67265766965778527001f90101f901bae2f2f4248101012259f40d6fa192306ddf206e92306d8e19d0810101d700fa40d401d001810101d700d20055406c156f05e28200ec19216eb3f2f43a01fa3157181117810101d7003082008aabf842561801c705f2f482009ad08b66163746976658527001f90101f901ba917f8e118b67265766965778527001f90101f901bae2f2f4248101012259f40d6fa192306ddf206e92306d8e19d0810101d700fa40d401d001810101d700d20055406c156f05e28200ec19216eb3f2f43b0330e30221821006a68ba9bae3022182105384f23ebae30211193d3e3f01941111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a10791068105704435601c87f01ca0011181117111611151114111311121111111055e0db3cc9ed54db314e01fc206ef2d0806f253010237f44148101015025c855405045810101cf0012ce01c8cecd810101cf00ca00c9103612206e953059f45a30944133f415e21115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a10791068105710464435123c01fc206ef2d0806f253010237044148101015025c855405045810101cf0012ce01c8cecd810101cf00ca00c9103612206e953059f45a30944133f415e21115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a10791068105710464435123c0140c87f01ca0011181117111611151114111311121111111055e0db3cc9ed54db314e02fc57195b57171115810101d700f4043082008aabf842561701c705f2f4820097138b66d616e75616c852e001f90101f901baf2f4816b658b672657669657781601f90101f901ba15f2f453eda8812710a90453f0a15112a852e0736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf818ae2404101f45b571782008aabf842561701c705f2f48200e4498b661637469766581601f90101f901ba15f2f456145611736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb008b963616e63656c6c656481115111711151114111611144301f65b57178200e5a25618f2f482008aabf842561701c705f2f42f5617a8561201a120c2008e3b561601736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb009130e211151117111511141116111411131115111311121114111244001a58cf8680cf8480f400f400cf8101fcf400c901fb0070228e65258101012259f40c6fa192306ddf206ef2d080111981010122561b206e953059f45a30944133f414e2111922736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00a4e45b337f8b9636f6d706c6574656484201c81115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a107910681057061035441359c87f01ca0011181117111611151114111311121111111055e0db3cc9ed54db314e01ae1113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a1079106810570610354403c87f01ca0011181117111611151114111311121111111055e0db3cc9ed54db314e01701111111311111110111211100f11110f0e11100e10df551cc87f01ca0011181117111611151114111311121111111055e0db3cc9ed54db314e03fe82009d4df82327bcf2f4811bac8b66163746976658526001f90101f901ba92357f8e108b672657669657781601f90101f901bae215f2f48200dc905617b3f2f46d7053038ae43020e303571757172f5616b60853fea8812710a904561021a15112a852f0736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c46474800c8258101012259f40d6fa192306ddf206e92306d8e19d0810101d700fa40d401d001810101d700d20055406c156f05e2206eb38e2c206ef2d0806f256c318e1e810101201035544433216e955b59f45a3098c801cf004133f442e201a4589130e29130e2a401fc5b56145611736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb008b963616e63656c6c656481115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b4902ec6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb006d70038ae45b571657167f8b9636f6d706c6574656481115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a10791068105706103544004a4b0156108a1079106810570610354403c87f01ca0011181117111611151114111311121111111055e0db3cc9ed544e01e2705619f8446e97f825f8157ff864de21a1f811a081010120561c5422334133f40c6fa19401d70030925b6de2206ef2d080810101280259f40d6fa192306ddf206e92306d8e19d0810101d700fa40d401d001810101d700d20055406c156f05e2206ef2d0806f2510345f042281010123714c013cc87f01ca0011181117111611151114111311121111111055e0db3cc9ed544e01284133f40c6fa19401d70030925b6de26e915be30d4d00d81281010150037f71216e955b59f45a3098c801cf004133f442e2078101015342206e953059f45a30944133f414e25112736d5a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002a4401601f6011117011118ce1115c8ce01111501cdc81114c8ce01111401cd1112c8ce01111201cd01111001810101cf001e810101cf001c810101cf000ac8810101cf0019ce07c8ce17cd05c8ce15cd03c8ce13cd810101cf0001c8810101cf0012810101cf0012810101cf0002c8810101cf0004c8ce14cd14f400148101014f003ccf0014810101cf0015f40005c8810101cf0016ca0014cd12cd12cd12cdcd} B>boc PUSHREF
+""";
+
+(cell, cell) $BountyEscrow$_init_child(slice $owner, slice $title, slice $description, slice $bountyType, int $poolAmount, int $winnerCount, slice $winnerSelection, slice $verification, slice $verificationRule, int $platformFeeBps, slice $platformAddress, int $createdAt) inline_ref {
+    ;; Build init code cell
+
+    ;; Contract Code: BountyEscrow
+    cell init_code = $BountyEscrow$_child_get_code();
+
+
+    builder b = begin_cell();
+    b = b.store_int(false, 1);
+    b = $BountyEscrow$init$_store(b, ($owner, $title, $description, $bountyType, $poolAmount, $winnerCount, $winnerSelection, $verification, $verificationRule, $platformFeeBps, $platformAddress, $createdAt));
+    return (init_code, b.end_cell());
+}
+
+;;
+;; Type: BountyFactory
+;; TLB: _ owner:address platformFeeBps:int257 platformAddress:address bountyCount:int257 bounties:dict<int, address> = BountyFactory
+;;
+
+builder $BountyFactory$_store(builder build_0, (slice, int, slice, int, cell) v) inline {
+    var (v'owner, v'platformFeeBps, v'platformAddress, v'bountyCount, v'bounties) = v;
+    build_0 = build_0.store_slice(v'owner);
+    build_0 = build_0.store_int(v'platformFeeBps, 257);
+    build_0 = build_0.store_slice(v'platformAddress);
+    var build_1 = begin_cell();
+    build_1 = build_1.store_int(v'bountyCount, 257);
+    build_1 = build_1.store_dict(v'bounties);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+(slice, ((slice, int, slice, int, cell))) $BountyFactory$_load(slice sc_0) inline {
+    var v'owner = sc_0~load_msg_addr();
+    var v'platformFeeBps = sc_0~load_int(257);
+    var v'platformAddress = sc_0~load_msg_addr();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'bountyCount = sc_1~load_int(257);
+    var v'bounties = sc_1~load_dict();
+    return (sc_0, (v'owner, v'platformFeeBps, v'platformAddress, v'bountyCount, v'bounties));
+}
+
+(slice, ((int, slice))) $BountyFactory$init$_load(slice sc_0) inline {
+    var v'platformFeeBps = sc_0~load_int(257);
+    var v'platformAddress = sc_0~load_msg_addr();
+    return (sc_0, (v'platformFeeBps, v'platformAddress));
+}
+
+(slice, int, slice, int, cell) $BountyFactory$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$BountyFactory$_load();
+    }
+    else {
+        (int $platformFeeBps, slice $platformAddress) = $sc~$BountyFactory$init$_load();
+        $sc.end_parse();
+        return $BountyFactory$_contract_init($platformFeeBps, $platformAddress);
+    }
+}
+
+() $BountyFactory$_contract_store((slice, int, slice, int, cell) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_int(true, 1);
+    b = $BountyFactory$_store(b, v);
+    set_data(b.end_cell());
+}
+
+;;
+;; Contract BountyFactory functions
+;;
+
+(slice, int, slice, int, cell) $BountyFactory$_contract_init(int $platformFeeBps, slice $platformAddress) impure inline {
+    var (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties)) = (null(), null(), null(), null(), null());
+    $self'owner = __tact_context_get_sender();
+    $self'platformFeeBps = $platformFeeBps;
+    $self'platformAddress = $platformAddress;
+    $self'bountyCount = 0;
+    $self'bounties = null();
+    return ($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties);
+}
+
+((slice, int, slice, int, cell), int) $BountyFactory$_fun_bountyCount((slice, int, slice, int, cell) $self) impure inline_ref {
+    var (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties)) = $self;
+    var $fresh$ret_35 = $self'bountyCount;
+    return (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties), $fresh$ret_35);
+}
+
+((slice, int, slice, int, cell), int) $BountyFactory$_fun_platformFeeBps((slice, int, slice, int, cell) $self) impure inline_ref {
+    var (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties)) = $self;
+    var $fresh$ret_36 = $self'platformFeeBps;
+    return (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties), $fresh$ret_36);
+}
+
+((slice, int, slice, int, cell), slice) $BountyFactory$_fun_platformAddress((slice, int, slice, int, cell) $self) impure inline_ref {
+    var (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties)) = $self;
+    var $fresh$ret_37 = $self'platformAddress;
+    return (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties), $fresh$ret_37);
+}
+
+((slice, int, slice, int, cell), slice) $BountyFactory$_fun_bountyAddress((slice, int, slice, int, cell) $self, int $index) impure inline_ref {
+    var (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties)) = $self;
+    var $fresh$ret_38 = __tact_not_null(__tact_dict_get_int_slice($self'bounties, 257, $index));
+    return (($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties), $fresh$ret_38);
+}
+
+;;
+;; Get methods of a Contract BountyFactory
+;;
+
+_ %bountyCount() method_id(99221) {
+    var self = $BountyFactory$_contract_load();
+    var res = self~$BountyFactory$_fun_bountyCount();
+    return res;
+}
+
+_ %platformFeeBps() method_id(90214) {
+    var self = $BountyFactory$_contract_load();
+    var res = self~$BountyFactory$_fun_platformFeeBps();
+    return res;
+}
+
+_ %platformAddress() method_id(79517) {
+    var self = $BountyFactory$_contract_load();
+    var res = self~$BountyFactory$_fun_platformAddress();
+    return res;
+}
+
+_ %bountyAddress(int $index) method_id(107429) {
+    int $index = $index;
+    var self = $BountyFactory$_contract_load();
+    var res = self~$BountyFactory$_fun_bountyAddress($index);
+    return res;
+}
+
+_ %owner() method_id(83229) {
+    var self = $BountyFactory$_contract_load();
+    var res = self~$BountyFactory$_fun_owner();
+    return res;
+}
+
+;;
+;; Routing of a Contract BountyFactory
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var ($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties) = $BountyFactory$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    var op = in_msg~load_opcode_internal();
+    ;; Receive CreateBounty message
+    if (op == 2510301030) {
+        var $msg'title = in_msg~load_ref().begin_parse();
+        var $msg'description = in_msg~load_ref().begin_parse();
+        slice sc_1 = in_msg~load_ref().begin_parse();
+        var $msg'bountyType = sc_1~load_ref().begin_parse();
+        var $msg'winnerCount = sc_1~load_int(257);
+        var $msg'winnerSelection = sc_1~load_ref().begin_parse();
+        var $msg'verification = sc_1~load_ref().begin_parse();
+        var $msg'verificationRule = sc_1~load_ref().begin_parse();
+        int $poolAmount = $Context$_get_value(__tact_context_get());
+        int $perWinner = ($poolAmount / $msg'winnerCount);
+        throw_unless(52330, ($perWinner >= 1000000));
+        throw_unless(41471, ($msg'winnerCount >= 1));
+        throw_unless(51182, ( (__tact_slice_eq($msg'winnerSelection, __gen_slice_string_b06e2f6ff1a217a458de5285280d11f15c0e47d065a96713ffb52bce4d197514())) ? (true) : (__tact_slice_eq($msg'winnerSelection, __gen_slice_string_3728345577d9175dc9c0490a3886394391baecc8146b746d3b8ac6f14c93121d())) ));
+        throw_unless(63248, ( (__tact_slice_eq($msg'verification, __gen_slice_string_3728345577d9175dc9c0490a3886394391baecc8146b746d3b8ac6f14c93121d())) ? (true) : (__tact_slice_eq($msg'verification, __gen_slice_string_5d9ddc2d8d51d37ba48d50ea85601098279b4c9d3cdff063b172304b0bb9da1a())) ));
+        var ($escrow'code, $escrow'data) = $BountyEscrow$_init_child(__tact_context_get_sender(), $msg'title, $msg'description, $msg'bountyType, $poolAmount, $msg'winnerCount, $msg'winnerSelection, $msg'verification, $msg'verificationRule, $self'platformFeeBps, $self'platformAddress, $global_now());
+        $global_send($SendParameters$_constructor_to_value_mode($global_contractAddress(($escrow'code, $escrow'data)), $poolAmount, 1));
+        $self'bounties~__tact_dict_set_int_slice(257, $self'bountyCount, $global_contractAddress(($escrow'code, $escrow'data)));
+        $self'bountyCount = ($self'bountyCount + 1);
+        $BountyFactory$_contract_store(($self'owner, $self'platformFeeBps, $self'platformAddress, $self'bountyCount, $self'bounties));
+        return ();
+    }
+    
+    ;; Throw if not handled
+    throw(130);
+}
+
+
+() __tact_selector_hack_asm() impure asm """
+@atend @ 1 {
+        execute current@ context@ current!
+        {
+            // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+            // We want to extract recv_internal/recv_external from the dict and select needed function
+            // not by jumping to the needed function by it's index, but by using usual IF statements.
+
+            }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+
+            <{ // Start of the new code builder
+                SETCP0
+                // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                swap
+                // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                <s ref@
+
+                // Extract the recv_internal from the dict
+                dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                swap
+
+                // Delete the recv_internal from the dict
+                0 swap @procdictkeylen idict- drop
+                // Delete the recv_external from the dict (it's okay if it's not there)
+                -1 swap @procdictkeylen idict- drop
+                // Delete the __tact_selector_hack from the dict
+                65535 swap @procdictkeylen idict- drop
+
+                // Bring the code builder from the bottom of the stack
+                // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                depth 1- roll
+                // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                swap
+
+                // Check if the dict is empty
+                dup null?
+                // Store a copy of this flag in the bottom of the stack
+                dup depth 1- -roll
+                {
+                    // If the dict is empty, just drop it (it will be null if it's empty)
+                    drop
+                }
+                {
+                    // If the dict is not empty, prepare continuation to be stored in c3
+                    <{
+                        // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                        swap @procdictkeylen DICTPUSHCONST
+                        // Jump to the needed function by it's index
+                        DICTIGETJMPZ
+                        // If such key is not found, throw 11 along with the key as an argument
+                        11 THROWARG
+                    }> PUSHCONT
+                    // Store the continuation in c3
+                    c3 POP
+                } cond
+
+                // Function id is on top of the (runtime) stack
+                DUP IFNOTJMP:<{
+                    // place recv_internal here
+                    DROP swap @addop
+                }>
+
+                // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                depth 1- roll
+                {
+                    // If the dict is empty, throw 11
+                    11 THROWARG
+                }
+                {
+                    // If the dict is not empty, jump to continuation from c3
+                    c3 PUSH JMPX
+                } cond
+            }> b>
+        } : }END>c
+        current@ context! current!
+    } does @atend !
+""";
+
+() __tact_selector_hack() method_id(65535) {
+    return __tact_selector_hack_asm();
+}

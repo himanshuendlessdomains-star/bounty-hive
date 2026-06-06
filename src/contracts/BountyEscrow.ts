@@ -44,6 +44,7 @@ export class BountyEscrow {
     }
     return beginCell()
       .storeUint(SELECT_WINNERS_OPCODE, 32)
+      .storeUint(winnerAddresses.length, 32)
       .storeRef(winnersCell.endCell())
       .endCell();
   }

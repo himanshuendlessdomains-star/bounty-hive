@@ -1,7 +1,7 @@
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton-community/sandbox';
-import { Cell, toNano } from 'ton-core';
-import { BountyEscrow } from '../wrappers/BountyEscrow';
-import { BountyFactory } from '../wrappers/BountyFactory';
+import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
+import { Cell, toNano } from '@ton/core';
+import { BountyEscrow } from '../build/BountyEscrow/BountyEscrow_BountyEscrow';
+import { BountyFactory } from '../build/BountyFactory/BountyFactory_BountyFactory';
 import { expect } from 'chai';
 
 describe('BountyEscrow', () => {

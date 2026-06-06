@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Bounty, CreateBountyPayload } from '../types/bounty';
+import { Bounty } from '../types/bounty';
 
 interface BountyState {
   bounties: Bounty[];

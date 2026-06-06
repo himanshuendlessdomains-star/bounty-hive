@@ -1,12 +1,10 @@
-import { Address, Cell, beginCell, toNano, fromNano } from '@ton/core';
+import { Address, Cell, beginCell, toNano } from '@ton/core';
 import { getTonConnectUI } from './tonConnect';
 import { getFactoryAddress } from './addresses';
 
 const CREATE_BOUNTY_OPCODE = 0x1;
 
 export class BountyFactory {
-  constructor(private address: Address) {}
-
   static buildCreateBountyMessage(params: {
     title: string;
     description: string;
@@ -79,5 +77,5 @@ export async function createBounty(params: {
 export async function getBountyAddresses(): Promise<string[]> {
   const response = await fetch('/api/bounties');
   const data = await response.json();
-  return data.bounties.map((b: any) => b.escrowAddress);
+  return data.bounties.map((b: { escrowAddress: string }) => b.escrowAddress);
 }

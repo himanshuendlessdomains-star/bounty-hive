@@ -18,10 +18,10 @@ export function formatUsd(usd: string | number): string {
   return `$${n.toFixed(4)}`;
 }
 
-export function toNano(tons: string | number): bigint {
-  const str = typeof tons === 'number' ? tons.toString() : tons;
+export function toNano(amount: string | number, decimals = 9): bigint {
+  const str = typeof amount === 'number' ? amount.toString() : amount;
   const [intPart, decPart = ''] = str.split('.');
-  const dec = (decPart + '000000000').slice(0, 9);
+  const dec = (decPart + '0'.repeat(decimals)).slice(0, decimals);
   return BigInt(intPart + dec);
 }
 

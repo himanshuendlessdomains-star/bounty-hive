@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WalletButton } from '../components/WalletButton';
 import { BountyCard } from '../components/BountyCard';
 import { useWalletStore } from '../stores/walletStore';
-import { api } from '../api/client';
+import { api, mapBounty } from '../api/client';
 import { Bounty } from '../types/bounty';
 
 export function MyBountiesPage() {
@@ -16,16 +16,23 @@ export function MyBountiesPage() {
   useEffect(() => {
     if (!address) return;
     setLoading(true);
-    const fetcher = tab === 'created'
-      ? api.getUserBounties(address)
-      : api.getUserSubmissions(address);
-
-    fetcher
-      .then((res: any) => {
-        setBounties(tab === 'created' ? res.bounties : res.submissions?.map((s: any) => s.bounty) || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    if (tab === 'created') {
+      api.getUserBounties(address)
+        .then((res) => setBounties(res.bounties.map(mapBounty)))
+        .catch(() => setBounties([]))
+        .finally(() => setLoading(false));
+    } else {
+      api.getUserSubmissions(address)
+        .then((res) =>
+          setBounties(
+            res.submissions.flatMap((s) =>
+              s.bounty ? [mapBounty(s.bounty)] : []
+            )
+          )
+        )
+        .catch(() => setBounties([]))
+        .finally(() => setLoading(false));
+    }
   }, [address, tab]);
 
   if (!connected) {

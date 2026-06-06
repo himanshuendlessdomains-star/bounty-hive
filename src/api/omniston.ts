@@ -20,15 +20,6 @@ interface OmnistonRoute {
   }>;
 }
 
-interface OmnistonQuote {
-  route: OmnistonRoute;
-  txParams: {
-    to: string;
-    value: string;
-    body?: string;
-  };
-}
-
 export class OmnistonClient {
   private ws: WebSocket | null = null;
   private requestId = 0;
@@ -44,7 +35,7 @@ export class OmnistonClient {
       this.ws = new WebSocket(OMNISTON_WS);
 
       this.ws.onopen = () => resolve();
-      this.ws.onerror = (err) => reject(new Error('Omniston connection failed'));
+      this.ws.onerror = () => reject(new Error('Omniston connection failed'));
       this.ws.onmessage = (event) => this.handleMessage(event.data);
 
       this.ws.onclose = () => {
@@ -167,7 +158,7 @@ export class OmnistonClient {
         bidUnits: params.offerUnits,
       });
 
-      if (!route) return params.stonfiQuote;
+      if (!route) return params.stonfiQuote ?? null;
 
       const omnistonQuote: SwapQuote = {
         offerAddress: params.offerAddress,
@@ -187,13 +178,13 @@ export class OmnistonClient {
         if (omnistonOutput > stonfiOutput) {
           return omnistonQuote;
         }
-        return params.stonfiQuote;
+        return params.stonfiQuote ?? null;
       }
 
       return omnistonQuote;
     } catch (err) {
       console.error('Failed to get best quote:', err);
-      return params.stonfiQuote;
+      return params.stonfiQuote ?? null;
     }
   }
 

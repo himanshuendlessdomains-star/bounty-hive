@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSwap } from '../hooks/useSwap';
 import { useTokenList } from '../hooks/useTokenList';
 import { useTonPrice } from '../hooks/useTonPrice';
@@ -14,8 +14,8 @@ interface DepositFlowProps {
 
 export function DepositFlow({ onDeposit, loading }: DepositFlowProps) {
   const { price: tonPrice } = useTonPrice();
-  const { tokens, loading: tokensLoading } = useTokenList();
-  const { selectedToken, setSelectedToken, amount, setAmount, quote, loading: swapLoading, swapping, error: swapError, simulate, executeSwap, loadTokens } = useSwap();
+  const { tokens } = useTokenList();
+  const { selectedToken, setSelectedToken, amount, setAmount, quote, loading: swapLoading, error: swapError, simulate, executeSwap, loadTokens } = useSwap();
   const [step, setStep] = useState<'select' | 'swap' | 'confirm'>('select');
   const [swapResult, setSwapResult] = useState<{ amount: string; swapped: boolean } | null>(null);
 

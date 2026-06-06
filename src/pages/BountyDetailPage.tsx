@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { api, BountyResponse } from '../api/client';
 import { useEscrowContract } from '../hooks/useEscrowContract';
 import { useWalletStore } from '../stores/walletStore';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { WalletButton } from '../components/WalletButton';
-import { Bounty } from '../types/bounty';
 import { formatTon, formatUsd, statusColor, statusLabel, bountyTypeIcon } from '../utils/format';
 
 export function BountyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { address: walletAddress } = useWalletStore();
-  const [bounty, setBounty] = useState<Bounty | null>(null);
+  const [bounty, setBounty] = useState<BountyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [proofUrl, setProofUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { submitProof, loading: escrowLoading } = useEscrowContract(bounty?.escrowAddress ?? null);
+  const { submitProof } = useEscrowContract(bounty?.escrowAddress ?? null);
 
   React.useEffect(() => {
     if (!id) return;
@@ -25,7 +24,7 @@ export function BountyDetailPage() {
     api
       .getBounty(id)
       .then((res) => {
-        setBounty(res as unknown as Bounty);
+        setBounty(res);
         setLoading(false);
       })
       .catch((err) => {
@@ -35,21 +34,18 @@ export function BountyDetailPage() {
   }, [id]);
 
   const handleSubmitProof = async () => {
-    if (!proofUrl.trim()) return;
+    if (!proofUrl.trim() || !bounty || !walletAddress) return;
     setSubmitting(true);
     try {
-      // Submit proof via backend
-      await api.createSubmission(bounty!.id, { proofUrl, userId: walletAddress! });
-      // Also submit on-chain if escrow exists
-      if (bounty?.escrowAddress) {
+      await api.submitProof({ bountyId: bounty.id, userId: walletAddress, proofUrl });
+      if (bounty.escrowAddress) {
         await submitProof(proofUrl);
       }
-      // Refresh bounty
-      const res = await api.getBounty(bounty!.id);
-      setBounty(res as unknown as Bounty);
+      const res = await api.getBounty(bounty.id);
+      setBounty(res);
       setProofUrl('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Submission failed');
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +125,7 @@ export function BountyDetailPage() {
 
         {isActive && (
           <div className="card">
-            <CountdownTimer targetDate={bounty.endsAt} size="lg" />
+            <CountdownTimer targetDate={new Date(bounty.endsAt)} size="lg" />
           </div>
         )}
 

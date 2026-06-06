@@ -1,6 +1,5 @@
-import React from 'react';
 import { Bounty } from '../types/bounty';
-import { formatTon, formatUsd, timeAgo, bountyTypeIcon, statusColor, statusLabel } from '../utils/format';
+import { formatTon, formatUsd, bountyTypeIcon, statusColor, statusLabel } from '../utils/format';
 
 interface BountyCardProps {
   bounty: Bounty;

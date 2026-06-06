@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 interface Toast { id: number; type: ToastType; message: string; }

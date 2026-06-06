@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BountyCard } from '../components/BountyCard';
 import { WalletButton } from '../components/WalletButton';
-import { api } from '../api/client';
-import { Bounty, BountyType } from '../types/bounty';
+import { api, mapBounty } from '../api/client';
+import { Bounty } from '../types/bounty';
 
 export function DiscoverPage() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export function DiscoverPage() {
     api
       .getBounties({ status: 'active', type: filter === 'all' ? undefined : filter })
       .then((res) => {
-        setBounties(res.bounties as Bounty[]);
+        setBounties(res.bounties.map(mapBounty));
         setLoading(false);
       })
       .catch((err) => {

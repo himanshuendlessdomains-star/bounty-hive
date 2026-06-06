@@ -1,4 +1,3 @@
-import React from 'react';
 import { SwapQuote, TokenAsset } from '../types/bounty';
 import { formatTon, formatUsd } from '../utils/format';
 

@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useTonConnectUI } from '@tonconnect/ui-react';
-import { Address, toNano, Cell } from '@ton/core';
+import { Address, toNano } from '@ton/core';
 import { BountyFactory } from '../contracts/BountyFactory';
 import { ADDRESSES } from '../contracts/addresses';
 import { useBountyStore } from '../stores/bountyStore';
 import { useWalletStore } from '../stores/walletStore';
 import { CreateBountyPayload } from '../types/bounty';
-import { api } from '../api/client';
+import { api, mapBounty } from '../api/client';
 
 export function useBountyContract() {
   const [loading, setLoading] = useState(false);
@@ -34,7 +34,6 @@ export function useBountyContract() {
 
         // 2. Deploy escrow contract via TON Connect
         const factoryAddress = Address.parse(ADDRESSES.testnet.factoryAddress);
-        const factory = new BountyFactory(factoryAddress);
 
         const poolAmountNano = toNano(payload.poolAmount);
         const feeAmountNano = toNano((parseFloat(payload.poolAmount) * 0.01).toFixed(4)); // 1% fee
@@ -63,25 +62,7 @@ export function useBountyContract() {
         });
 
         // 3. Update backend with escrow address (will be set by indexer)
-        addBounty({
-          id: backendBounty.id,
-          title: backendBounty.title,
-          description: backendBounty.description,
-          type: backendBounty.type as any,
-          poolAmount: backendBounty.poolAmount,
-          poolUsd: backendBounty.poolUsd,
-          winnerCount: backendBounty.winnerCount,
-          perWinnerAmount: backendBounty.perWinnerAmount,
-          perWinnerUsd: backendBounty.perWinnerUsd,
-          winnerSelection: backendBounty.winnerSelection as any,
-          verification: backendBounty.verification as any,
-          verificationRule: backendBounty.verificationRule,
-          status: backendBounty.status as any,
-          ownerId: backendBounty.ownerId,
-          submissions: [],
-          endsAt: new Date(backendBounty.endsAt).getTime(),
-          escrowAddress: backendBounty.escrowAddress ?? undefined,
-        });
+        addBounty(mapBounty(backendBounty));
 
         return backendBounty;
       } catch (err: any) {

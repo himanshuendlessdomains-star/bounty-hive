@@ -1,11 +1,17 @@
 // API client for BountyHive backend
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import {
+  Bounty,
+  Submission,
+  Winner,
+  BountyType,
+  WinnerSelection,
+  VerificationMethod,
+  BountyStatus,
+  SubmissionStatus,
+} from '../types/bounty';
 
-interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-}
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function request<T>(
   path: string,
@@ -76,6 +82,7 @@ export interface SubmissionResponse {
     displayName: string | null;
     avatarUrl: string | null;
   };
+  bounty?: BountyResponse;
 }
 
 export interface WinnerResponse {
@@ -172,3 +179,59 @@ export const api = {
 
   health: () => request<{ status: string; timestamp: string }>('/health'),
 };
+
+// ─── Response → Domain mappers ────────────────────────────────────────────────
+
+export function mapSubmission(r: SubmissionResponse): Submission {
+  return {
+    id: r.id,
+    bountyId: r.bountyId,
+    userId: r.userId,
+    proofUrl: r.proofUrl,
+    status: r.status as SubmissionStatus,
+    submittedAt: r.submittedAt,
+    reviewedAt: r.reviewedAt,
+    user: r.user,
+  };
+}
+
+export function mapWinner(r: WinnerResponse): Winner {
+  return {
+    id: r.id,
+    bountyId: r.bountyId,
+    userId: r.userId,
+    payoutAmount: r.payoutAmount,
+    payoutTxHash: r.payoutTxHash,
+    paidAt: r.paidAt,
+    user: r.user,
+  };
+}
+
+export function mapBounty(r: BountyResponse): Bounty {
+  return {
+    id: r.id,
+    escrowAddress: r.escrowAddress ?? undefined,
+    title: r.title,
+    description: r.description,
+    type: r.type as BountyType,
+    poolAmount: r.poolAmount,
+    poolUsd: r.poolUsd,
+    winnerCount: r.winnerCount,
+    perWinnerAmount: r.perWinnerAmount,
+    perWinnerUsd: r.perWinnerUsd,
+    winnerSelection: r.winnerSelection as WinnerSelection,
+    verification: r.verification as VerificationMethod,
+    verificationRule: r.verificationRule ?? '',
+    status: r.status as BountyStatus,
+    duration: r.duration,
+    platformFeeBps: r.platformFeeBps,
+    ownerId: r.ownerId,
+    submissions: r.submissions?.map(mapSubmission) ?? [],
+    winners: r.winners?.map(mapWinner),
+    endsAt: new Date(r.endsAt).getTime(),
+    reviewEndsAt: r.reviewEndsAt ? new Date(r.reviewEndsAt).getTime() : undefined,
+    completedAt: r.completedAt ? new Date(r.completedAt).getTime() : undefined,
+    createdAt: r.createdAt,
+    owner: r.owner,
+  };
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBountyContract } from '../hooks/useBountyContract';
 import { useTonPrice } from '../hooks/useTonPrice';
@@ -7,7 +7,7 @@ import { useToast } from '../components/Toast';
 import { DepositFlow } from '../components/DepositFlow';
 import { WalletButton } from '../components/WalletButton';
 import { CREATE_BOUNTY_STEPS, BountyType, WinnerSelection, VerificationMethod } from '../types/bounty';
-import { validateMinPayout, calcPerWinner } from '../utils/format';
+import { validateMinPayout, calcPerWinner, fromNano } from '../utils/format';
 
 export function CreateBountyPage() {
   const navigate = useNavigate();
@@ -24,8 +24,7 @@ export function CreateBountyPage() {
   const [winnerCount, setWinnerCount] = useState(10);
   const [winnerSelection, setWinnerSelection] = useState<WinnerSelection>('draw');
   const [verification, setVerification] = useState<VerificationMethod>('manual');
-  const [verificationRule, setVerificationRule] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
+  const [verificationRule] = useState('');
 
   const perWinner = calcPerWinner(poolAmount || '0', winnerCount);
   const { valid: minPayoutValid, perWinnerUsd } = validateMinPayout(poolAmount || '0', winnerCount, tonPrice);
@@ -139,7 +138,7 @@ export function CreateBountyPage() {
         {step === 3 && (
           <>
             <h2 className="text-white font-semibold">Set the reward pool</h2>
-            <DepositFlow onDeposit={(amt) => setDepositAmount(amt)} />
+            <DepositFlow onDeposit={(amt) => setPoolAmount(fromNano(amt))} />
             <div className="card">
               <div className="space-y-3">
                 <div>

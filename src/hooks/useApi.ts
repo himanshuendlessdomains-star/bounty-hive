@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api, BountyResponse } from '../api/client';
+import { api, BountyResponse, mapBounty } from '../api/client';
 import { useBountyStore } from '../stores/bountyStore';
 
 // ─── Fetch bounties list ─────────────────────────────────────────────────────
@@ -78,25 +78,7 @@ export function useCreateBounty() {
     setError(null);
     try {
       const bounty = await api.createBounty(data);
-      addBounty({
-        id: bounty.id,
-        title: bounty.title,
-        description: bounty.description,
-        type: bounty.type as any,
-        poolAmount: bounty.poolAmount,
-        poolUsd: bounty.poolUsd,
-        winnerCount: bounty.winnerCount,
-        perWinnerAmount: bounty.perWinnerAmount,
-        perWinnerUsd: bounty.perWinnerUsd,
-        winnerSelection: bounty.winnerSelection as any,
-        verification: bounty.verification as any,
-        verificationRule: bounty.verificationRule,
-        status: bounty.status as any,
-        ownerId: bounty.ownerId,
-        submissions: [],
-        endsAt: new Date(bounty.endsAt).getTime(),
-        escrowAddress: bounty.escrowAddress ?? undefined,
-      });
+      addBounty(mapBounty(bounty));
       return bounty;
     } catch (err: any) {
       setError(err.message);

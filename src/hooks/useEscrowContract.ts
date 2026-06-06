@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTonConnectUI } from '@tonconnect/ui-react';
-import { Address, toNano, Cell } from '@ton/core';
+import { Address, toNano } from '@ton/core';
 import { BountyEscrow } from '../contracts/BountyEscrow';
 
 export function useEscrowContract(escrowAddress: string | null) {

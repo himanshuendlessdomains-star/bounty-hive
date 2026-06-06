@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  telegramId    String?   @unique
+  tonAddress    String?   @unique
+  username      String?
+  displayName   String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  bounties      Bounty[]  @relation("Owner")
+  submissions   Submission[]
+}
+
+model Bounty {
+  id              String   @id @default(cuid())
+  escrowAddress   String?  @unique
+  title           String
+  description     String
+  type            String   // "task" | "quiz" | "creative"
+  poolAmount      String   // TON amount (string for precision)
+  poolUsd         String   @default("0")
+  winnerCount     Int
+  perWinnerAmount  String
+  perWinnerUsd    String   @default("0")
+  winnerSelection  String   // "draw" | "manual"
+  verification    String   // "manual" | "auto"
+  verificationRule String? @default("")
+  status          String   @default("active") // "active" | "review" | "completed" | "cancelled"
+  duration        Int      @default(86400) // always 24h
+  platformFeeBps  Int      @default(100) // 1%
+  createdAt       DateTime @default(now())
+  endsAt          DateTime
+  reviewEndsAt    DateTime
+  completedAt     DateTime?
+
+  ownerId         String
+  owner           User     @relation("Owner", fields: [ownerId], references: [id])
+  submissions     Submission[]
+  winners         Winner[]
+
+  @@index([status])
+  @@index([ownerId])
+  @@index([escrowAddress])
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  bountyId      String
+  bounty        Bounty   @relation(fields: [bountyId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  proofUrl      String
+  status        String   @default("pending") // "pending" | "approved" | "rejected"
+  submittedAt   DateTime @default(now())
+  reviewedAt    DateTime?
+
+  @@index([bountyId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Winner {
+  id            String   @id @default(cuid())
+  bountyId      String
+  bounty        Bounty   @relation(fields: [bountyId], references: [id])
+  userId        String
+  payoutAmount  String   // TON amount
+  payoutTxHash  String?
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([bountyId])
+  @@index([userId])
+}

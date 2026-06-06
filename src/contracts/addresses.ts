@@ -9,6 +9,8 @@ export const CONTRACTS = {
   },
 };
 
+export const ADDRESSES = CONTRACTS;
+
 export const IS_TESTNET = import.meta.env.VITE_TON_NETWORK !== 'mainnet';
 
 export function getFactoryAddress(): string {

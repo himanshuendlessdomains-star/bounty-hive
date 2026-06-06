@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-
-// ─── Telegram WebApp Auth Middleware ─────────────────────────────────────────
-// Validates Telegram initData to authenticate requests
+import crypto from 'crypto';
 
 interface TelegramUser {
   id: number;
@@ -12,13 +10,27 @@ interface TelegramUser {
   language_code?: string;
 }
 
-// In production, validate the hash using the bot token
-// For now, we parse the user data from the initData query string
+function validateTelegramHash(initData: string, botToken: string): boolean {
+  const params = new URLSearchParams(initData);
+  const hash = params.get('hash');
+  if (!hash) return false;
+
+  params.delete('hash');
+  const checkString = [...params.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('\n');
+
+  const secret = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+  const checkHash = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
+
+  return crypto.timingSafeEqual(Buffer.from(checkHash, 'hex'), Buffer.from(hash, 'hex'));
+}
+
 export function telegramAuth(req: Request, res: Response, next: NextFunction) {
   const initData = req.headers['x-telegram-init-data'] as string;
 
   if (!initData) {
-    // In development, allow requests without auth
     if (process.env.NODE_ENV === 'development') {
       req.user = {
         id: 'dev-user',
@@ -32,22 +44,22 @@ export function telegramAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    // Parse initData query string
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+
+    if (botToken && process.env.NODE_ENV !== 'development') {
+      if (!validateTelegramHash(initData, botToken)) {
+        return res.status(401).json({ error: 'Invalid Telegram auth data' });
+      }
+    }
+
     const params = new URLSearchParams(initData);
     const userJson = params.get('user');
 
     if (!userJson) {
-      return res.status(401).json({ error: 'Invalid auth data' });
+      return res.status(401).json({ error: 'Invalid auth data: missing user' });
     }
 
     const tgUser: TelegramUser = JSON.parse(userJson);
-
-    // In production, validate the hash:
-    // const hash = params.get('hash');
-    // const secret = crypto.createHmac('sha256', BOT_TOKEN).update('WebAppData').digest();
-    // const checkString = [...params.entries()].filter(([k]) => k !== 'hash').sort().map(([k, v]) => `${k}=${v}`).join('\n');
-    // const checkHash = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
-    // if (checkHash !== hash) return res.status(401).json({ error: 'Invalid hash' });
 
     req.user = {
       id: String(tgUser.id),
@@ -58,12 +70,11 @@ export function telegramAuth(req: Request, res: Response, next: NextFunction) {
     };
 
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: 'Invalid auth data' });
   }
 }
 
-// Extend Express Request type
 declare global {
   namespace Express {
     interface Request {

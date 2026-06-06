@@ -13,6 +13,11 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+const tgInitData: string =
+  typeof window !== 'undefined'
+    ? (window as any).Telegram?.WebApp?.initData ?? ''
+    : '';
+
 async function request<T>(
   path: string,
   options?: RequestInit
@@ -21,6 +26,7 @@ async function request<T>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'x-telegram-init-data': tgInitData,
       ...options?.headers,
     },
   });

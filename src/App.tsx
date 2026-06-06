@@ -9,7 +9,7 @@ import { CreateBountyPage } from './pages/CreateBountyPage';
 import { MyBountiesPage } from './pages/MyBountiesPage';
 
 const isTelegram = !!(window as any).Telegram?.WebApp?.initData;
-const BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL ?? 'https://t.me/BountyHiveBot';
+const BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL ?? 't.me/bountyhive24_bot/bountyhive24';
 
 function TelegramGate() {
   if (isTelegram) return null;

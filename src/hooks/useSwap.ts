@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { fetchTokenList, getBestQuote, getSwapRoute, TON_ADDRESS } from '../api/stonfi';
 import { TokenAsset, SwapQuote, SwapRoute } from '../types/bounty';
 import { getTonConnectUI } from '../contracts/tonConnect';
-import { toNano } from '../utils/format';
 
 export function useSwap() {
   const [tokens, setTokens] = useState<TokenAsset[]>([]);
@@ -59,7 +58,6 @@ export function useSwap() {
       setSwapping(true);
       setError(null);
       try {
-        // Get the full route with transaction params
         const route: SwapRoute | null = await getSwapRoute({
           offerAddress: swapQuote.offerAddress,
           askAddress: swapQuote.askAddress,
@@ -69,19 +67,16 @@ export function useSwap() {
         });
 
         if (!route) {
-          // No route available — for direct TON deposits, just return the amount
           if (swapQuote.offerAddress === TON_ADDRESS) {
             return { amount: swapQuote.offerUnits, swapped: false };
           }
           throw new Error('No swap route available. Try depositing TON directly.');
         }
 
-        // If it's a direct TON deposit (no swap needed), skip the transaction
         if (swapQuote.offerAddress === TON_ADDRESS) {
           return { amount: swapQuote.offerUnits, swapped: false };
         }
 
-        // Send the swap transaction via TonConnect
         const ui = getTonConnectUI();
         const txParams = route.txParams;
 
@@ -94,7 +89,6 @@ export function useSwap() {
           validUntil: Math.floor(Date.now() / 1000) + 600,
         });
 
-        // After successful swap, return the expected TON amount
         return {
           amount: swapQuote.minAskUnits,
           swapped: true,

@@ -9,6 +9,7 @@ import {
   SubmissionStatus,
 } from '../types/bounty';
 import { useWalletStore } from '../stores/walletStore';
+import { useUserStore } from '../stores/userStore';
 import { MOCK_BOUNTIES } from './mock';
 
 // ─── Mock mode ────────────────────────────────────────────────────────────────
@@ -30,19 +31,29 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const tonAddress = useWalletStore.getState().address ?? '';
   const tgInitData = getTgInitData();
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (tgInitData) headers['x-telegram-init-data'] = tgInitData;
+  if (tonAddress) headers['x-ton-address'] = tonAddress;
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...(tgInitData ? { 'x-telegram-init-data': tgInitData } : {}),
-      ...(tonAddress ? { 'x-ton-address': tonAddress } : {}),
-      ...options?.headers,
+      ...headers,
+      ...(options?.headers as Record<string, string> || {}),
     },
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    let errorMsg = `HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      errorMsg = err.error || errorMsg;
+    } catch {
+      // response wasn't JSON
+    }
+    throw new Error(errorMsg);
   }
 
   return res.json();
@@ -328,5 +339,6 @@ export function mapBounty(r: BountyResponse): Bounty {
     completedAt: r.completedAt ? new Date(r.completedAt).getTime() : undefined,
     createdAt: r.createdAt,
     owner: r.owner,
+    submissionCount: r.submissionCount,
   };
 }

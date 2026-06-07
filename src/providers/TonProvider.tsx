@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { TonConnectUIProvider, useTonAddress } from '@tonconnect/ui-react';
 import { useWalletStore } from '../stores/walletStore';
 
@@ -16,8 +16,18 @@ function WalletStateSync() {
 }
 
 export function TonProvider({ children }: { children: ReactNode }) {
+  const [tonFailed, setTonFailed] = useState(false);
+
+  // If TonConnect fails to initialize (bad manifest, network error, etc.),
+  // still render the app — just without wallet features
+  if (tonFailed) {
+    return <>{children}</>;
+  }
+
   return (
-    <TonConnectUIProvider manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}>
+    <TonConnectUIProvider
+      manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
+    >
       <WalletStateSync />
       {children}
     </TonConnectUIProvider>

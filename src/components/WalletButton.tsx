@@ -1,4 +1,4 @@
-import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { Component, type ReactNode } from 'react';
 import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
 import { shortenAddress } from '../utils/format';
 
@@ -14,7 +14,7 @@ class WalletErrorBoundary extends Component<
   static getDerivedStateFromError() {
     return { hasError: true };
   }
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  componentDidCatch(error: Error) {
     console.warn('WalletButton: TonConnect not available:', error.message);
   }
   render() {

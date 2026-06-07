@@ -23,6 +23,7 @@ router.post('/', async (req, res) => {
 
     const submission = await prisma.submission.create({
       data: { bountyId, userId: callerId, proofUrl, status: 'pending' },
+      include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
     });
 
     res.status(201).json(submission);
@@ -52,7 +53,8 @@ router.patch('/:id', async (req, res) => {
 
     const updated = await prisma.submission.update({
       where: { id: req.params.id },
-      data: { status, reviewedAt: new Date() },
+n      data: { status, reviewedAt: new Date() },
+      include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
     });
     res.json(updated);
   } catch (err: any) {

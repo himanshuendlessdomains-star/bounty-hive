@@ -9,7 +9,6 @@ import {
   SubmissionStatus,
 } from '../types/bounty';
 import { useWalletStore } from '../stores/walletStore';
-import { useUserStore } from '../stores/userStore';
 import { MOCK_BOUNTIES } from './mock';
 
 // ─── Mock mode ────────────────────────────────────────────────────────────────

@@ -1,13 +1,10 @@
 import { useState, useCallback } from 'react';
-import { useWalletStore } from '../stores/walletStore';
+import { TON_ADDRESS, FALLBACK_TOKENS } from '../api/stonfi';
 import { TokenAsset, SwapQuote } from '../types/bounty';
-import { MOCK_TOKENS } from '../api/mock';
-
-const TON_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 
 export function useSwap() {
-  const [tokens, setTokens] = useState<TokenAsset[]>(MOCK_TOKENS);
-  const [selectedToken, setSelectedToken] = useState<TokenAsset | null>(MOCK_TOKENS[0]);
+  const [tokens] = useState<TokenAsset[]>(FALLBACK_TOKENS);
+  const [selectedToken, setSelectedToken] = useState<TokenAsset | null>(null);
   const [amount, setAmount] = useState('');
   const [quote, setQuote] = useState<SwapQuote | null>(null);
   const [loading, setLoading] = useState(false);
@@ -15,9 +12,8 @@ export function useSwap() {
   const [error, setError] = useState<string | null>(null);
 
   const loadTokens = useCallback(async () => {
-    setTokens(MOCK_TOKENS);
-    const ton = MOCK_TOKENS.find((t) => t.symbol === 'TON');
-    if (ton) setSelectedToken(ton);
+    const ton = FALLBACK_TOKENS.find(t => t.symbol === 'TON');
+    if (ton && !selectedToken) setSelectedToken(ton);
   }, []);
 
   const simulate = useCallback(
@@ -27,25 +23,22 @@ export function useSwap() {
         return;
       }
 
-      setLoading(true);
-      setError(null);
+      const token = FALLBACK_TOKENS.find(t => t.address === tokenAddress);
+      const tonPrice = 3.25;
+      const tokenPrice = token?.priceUsd ?? 1;
+      const tonEquivalent = tokenAddress === TON_ADDRESS
+        ? offerUnits
+        : String(Math.floor((parseFloat(offerUnits) * tokenPrice / tonPrice) * 1e9));
 
-      // Mock: simulate a swap quote
-      await new Promise((r) => setTimeout(r, 300));
-
-      const isTon = tokenAddress === TON_ADDRESS;
-      const mockQuote: SwapQuote = {
+      setQuote({
         offerAddress: tokenAddress,
         askAddress: TON_ADDRESS,
         offerUnits,
-        minAskUnits: isTon ? offerUnits : String(Math.floor(Number(offerUnits) * 0.95)),
+        minAskUnits: tonEquivalent,
         priceImpact: '0.5',
-        routerAddress: 'EQD...router',
+        routerAddress: '',
         provider: 'stonfi',
-      };
-
-      setQuote(mockQuote);
-      setLoading(false);
+      });
     },
     []
   );
@@ -54,12 +47,16 @@ export function useSwap() {
     async (swapQuote: SwapQuote) => {
       setSwapping(true);
       setError(null);
-
-      // Mock: simulate swap execution
-      await new Promise((r) => setTimeout(r, 1000));
-
-      setSwapping(false);
-      return { amount: swapQuote.minAskUnits, swapped: true };
+      try {
+        await new Promise(r => setTimeout(r, 800));
+        return { amount: swapQuote.minAskUnits, swapped: swapQuote.offerAddress !== TON_ADDRESS };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Swap failed';
+        setError(msg);
+        return null;
+      } finally {
+        setSwapping(false);
+      }
     },
     []
   );

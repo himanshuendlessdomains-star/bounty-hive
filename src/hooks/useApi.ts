@@ -72,7 +72,6 @@ export function useCreateBounty() {
     verification: string;
     verificationRule?: string;
     escrowAddress?: string;
-    ownerId: string;
   }) => {
     setLoading(true);
     setError(null);
@@ -99,7 +98,6 @@ export function useSubmitProof() {
 
   const submit = useCallback(async (data: {
     bountyId: string;
-    userId: string;
     proofUrl: string;
   }) => {
     setLoading(true);

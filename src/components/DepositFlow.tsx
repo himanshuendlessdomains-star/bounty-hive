@@ -5,7 +5,7 @@ import { useTonPrice } from '../hooks/useTonPrice';
 import { TokenSelector } from './TokenSelector';
 import { SwapPreview } from './SwapPreview';
 import { TON_ADDRESS } from '../api/stonfi';
-import { toNano, fromNano } from '../utils/format';
+import { toNano } from '../utils/format';
 import { useWalletStore } from '../stores/walletStore';
 
 interface DepositFlowProps {
@@ -21,7 +21,7 @@ export function DepositFlow({ onDeposit, loading }: DepositFlowProps) {
   const [step, setStep] = useState<'select' | 'swap' | 'confirm'>('select');
   const [swapResult, setSwapResult] = useState<{ amount: string; swapped: boolean } | null>(null);
 
-  useEffect(() => { loadTokens(); }, []);
+  useEffect(() => { loadTokens(); }, [loadTokens]);
 
   useEffect(() => {
     if (!selectedToken || !amount || parseFloat(amount) <= 0) return;
@@ -31,7 +31,7 @@ export function DepositFlow({ onDeposit, loading }: DepositFlowProps) {
       const units = toNano(amount, selectedToken.decimals).toString();
       simulate(selectedToken.address, units);
     }
-  }, [selectedToken, amount]);
+  }, [selectedToken, amount, simulate]);
 
   const handleSelectToken = (token: any) => { setSelectedToken(token); setAmount(''); setStep('swap'); };
 
@@ -101,7 +101,7 @@ export function DepositFlow({ onDeposit, loading }: DepositFlowProps) {
 
           {quote && !swapLoading && (
             <SwapPreview
-n              quote={quote}
+              quote={quote}
               inputToken={selectedToken}
               inputAmount={amount}
               tonPrice={tonPrice}
@@ -113,7 +113,7 @@ n              quote={quote}
             disabled={!amount || parseFloat(amount) <= 0 || (!isTon && !quote) || loading}
             className="btn-primary w-full"
           >
-            {loading ? 'Processing...' : isTon ? 'Deposit TON' : `Swap to TON`}
+            {loading ? 'Processing...' : isTon ? 'Deposit TON' : 'Swap to TON'}
           </button>
         </>
       )}

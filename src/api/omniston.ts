@@ -16,7 +16,7 @@ export class OmnistonClient {
     return null;
   }
 
-  async getBestQuote(params: {
+  async getBestQuote(_params: {
     offerAddress: string;
     askAddress: string;
     offerUnits: string;

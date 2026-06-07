@@ -1,17 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
+import { MOCK_TON_PRICE } from '../api/mock';
 
-const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd';
-const REFRESH_INTERVAL = 60_000; // 1 minute
-const FALLBACK_PRICE = 3.25; // fallback if API fails
+// ─── Mock mode: returns fixed price, no API calls ─────────────────────────────
+const USE_MOCK = !import.meta.env.VITE_API_URL;
+const FALLBACK_PRICE = MOCK_TON_PRICE; // $3.25
 
 export function useTonPrice() {
   const [price, setPrice] = useState<number>(FALLBACK_PRICE);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPrice = useCallback(async () => {
+    if (USE_MOCK) {
+      // Mock: just use the fixed price
+      setPrice(FALLBACK_PRICE);
+      setLoading(false);
+      return;
+    }
+
+    // Real mode: fetch from CoinGecko
     try {
-      const res = await fetch(COINGECKO_URL);
+      const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const tonPrice = data?.['the-open-network']?.usd;
@@ -24,15 +33,18 @@ export function useTonPrice() {
     } catch (err: any) {
       console.warn('Failed to fetch TON price, using fallback:', err.message);
       setError(err.message);
-      // Keep the last known price or fallback
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (USE_MOCK) {
+      setLoading(false);
+      return;
+    }
     fetchPrice();
-    const interval = setInterval(fetchPrice, REFRESH_INTERVAL);
+    const interval = setInterval(fetchPrice, 60_000);
     return () => clearInterval(interval);
   }, [fetchPrice]);
 

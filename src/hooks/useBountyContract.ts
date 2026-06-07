@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useWalletStore } from '../stores/walletStore';
+import { useUserStore } from '../stores/userStore';
 import { useBountyStore } from '../stores/bountyStore';
 import { api, mapBounty } from '../api/client';
 import { CreateBountyPayload } from '../types/bounty';
@@ -9,6 +10,7 @@ export function useBountyContract() {
   const [error, setError] = useState<string | null>(null);
   const { addBounty } = useBountyStore();
   const { address: walletAddress } = useWalletStore();
+  const { userId, syncUser } = useUserStore();
 
   const createBounty = useCallback(
     async (payload: CreateBountyPayload) => {
@@ -21,8 +23,15 @@ export function useBountyContract() {
       setError(null);
 
       try {
-        // Mock: create via API (which returns mock data)
-        // Duration is always 24h — the API client defaults it
+        // Ensure user is synced with backend before creating
+        let currentUserId = userId;
+        if (!currentUserId) {
+          currentUserId = await syncUser(walletAddress);
+          if (!currentUserId) {
+            throw new Error('Failed to sync user — please reconnect wallet');
+          }
+        }
+
         const backendBounty = await api.createBounty({
           title: payload.title,
           description: payload.description,
@@ -44,7 +53,7 @@ export function useBountyContract() {
         setLoading(false);
       }
     },
-    [walletAddress, addBounty]
+    [walletAddress, userId, addBounty, syncUser]
   );
 
   return { createBounty, loading, error };

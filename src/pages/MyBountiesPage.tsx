@@ -9,7 +9,7 @@ import { Bounty } from '../types/bounty';
 
 export function MyBountiesPage() {
   const navigate = useNavigate();
-  const { address, connected } = useWalletStore();
+  const { connected } = useWalletStore();
   const { userId } = useUserStore();
   const [tab, setTab] = useState<'created' | 'submitted'>('created');
   const [bounties, setBounties] = useState<Bounty[]>([]);

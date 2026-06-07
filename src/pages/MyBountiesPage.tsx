@@ -14,7 +14,11 @@ export function MyBountiesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!address) return;
+    if (!address) {
+      setBounties([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     if (tab === 'created') {
       api.getUserBounties(address)
@@ -23,13 +27,16 @@ export function MyBountiesPage() {
         .finally(() => setLoading(false));
     } else {
       api.getUserSubmissions(address)
-        .then((res) =>
-          setBounties(
-            res.submissions.flatMap((s) =>
-              s.bounty ? [mapBounty(s.bounty)] : []
-            )
-          )
-        )
+        .then(async (res) => {
+          const fetched: Bounty[] = [];
+          for (const s of res.submissions) {
+            try {
+              const b = await api.getBounty(s.bountyId);
+              fetched.push(mapBounty(b));
+            } catch { /* skip */ }
+          }
+          setBounties(fetched);
+        })
         .catch(() => setBounties([]))
         .finally(() => setLoading(false));
     }
@@ -68,7 +75,7 @@ export function MyBountiesPage() {
               tab === 'created'
                 ? 'bg-hive-500 text-white'
                 : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-            }`}
+            }`
           >
             Created
           </button>
@@ -78,7 +85,7 @@ export function MyBountiesPage() {
               tab === 'submitted'
                 ? 'bg-hive-500 text-white'
                 : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-            }`}
+            }`
           >
             Submitted
           </button>

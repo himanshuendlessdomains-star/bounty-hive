@@ -91,7 +91,6 @@ export interface SubmissionResponse {
   submittedAt: string;
   reviewedAt: string | null;
   user: { id: string; username: string | null; displayName: string | null; avatarUrl: string | null };
-  bounty?: BountyResponse;
 }
 
 export interface WinnerResponse {
@@ -111,8 +110,12 @@ export const api = {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
       let filtered = [...MOCK_BOUNTIES];
-      if (params?.status) filtered = filtered.filter((b) => b.status === params.status);
-      if (params?.type) filtered = filtered.filter((b) => b.type === params.type);
+      if (params?.status && params.status !== 'all') {
+        filtered = filtered.filter((b) => b.status === params.status);
+      }
+      if (params?.type) {
+        filtered = filtered.filter((b) => b.type === params.type);
+      }
       return { bounties: filtered, total: filtered.length, page: 1, limit: 20 };
     }
     const query = new URLSearchParams();
@@ -144,23 +147,33 @@ export const api = {
     winnerSelection: string;
     verification: string;
     verificationRule?: string;
+    duration?: number;
     escrowAddress?: string;
   }) => {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
       const now = Date.now();
+      const dur = data.duration ?? 24;
       return {
         id: `bounty-${Date.now()}`,
         escrowAddress: null,
-        ...data,
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        poolAmount: data.poolAmount,
         poolUsd: String(parseFloat(data.poolAmount) * 3.25),
+        winnerCount: data.winnerCount,
         perWinnerAmount: String(parseFloat(data.poolAmount) / data.winnerCount),
         perWinnerUsd: String((parseFloat(data.poolAmount) / data.winnerCount) * 3.25),
+        winnerSelection: data.winnerSelection,
+        verification: data.verification,
+        verificationRule: data.verificationRule ?? '',
         status: 'active',
+        duration: dur,
         platformFeeBps: 100,
         createdAt: new Date(now).toISOString(),
-        endsAt: new Date(now + data.duration * 3600000).toISOString(),
-        reviewEndsAt: new Date(now + data.duration * 3600000 + 86400000).toISOString(),
+        endsAt: new Date(now + dur * 3600000).toISOString(),
+        reviewEndsAt: new Date(now + dur * 3600000 + 86400000).toISOString(),
         completedAt: null,
         ownerId: 'user-1',
         owner: { id: 'user-1', username: 'bountyhive', displayName: 'BountyHive', avatarUrl: null },
@@ -177,7 +190,7 @@ export const api = {
       await delay(MOCK_DELAY);
       const bounty = MOCK_BOUNTIES.find((b) => b.id === id);
       if (!bounty) throw new Error('Bounty not found');
-      return { ...bounty, ...data };
+      return { ...bounty, ...data } as BountyResponse;
     }
     return request<BountyResponse>(`/bounties/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
   },
@@ -308,8 +321,8 @@ export function mapBounty(r: BountyResponse): Bounty {
     duration: r.duration,
     platformFeeBps: r.platformFeeBps,
     ownerId: r.ownerId,
-    submissions: r.submissions.map(mapSubmission),
-    winners: r.winners.map(mapWinner),
+    submissions: (r.submissions ?? []).map(mapSubmission),
+    winners: (r.winners ?? []).map(mapWinner),
     endsAt: new Date(r.endsAt).getTime(),
     reviewEndsAt: r.reviewEndsAt ? new Date(r.reviewEndsAt).getTime() : undefined,
     completedAt: r.completedAt ? new Date(r.completedAt).getTime() : undefined,

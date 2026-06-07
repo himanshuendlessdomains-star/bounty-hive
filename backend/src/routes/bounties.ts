@@ -105,6 +105,11 @@ router.post('/', async (req, res) => {
         endsAt,
         reviewEndsAt,
       },
+      include: {
+        owner: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        submissions: true,
+        winners: true,
+      },
     });
 
     res.status(201).json(bounty);
@@ -128,6 +133,9 @@ router.patch('/:id', async (req, res) => {
     const updated = await prisma.bounty.update({
       where: { id: req.params.id },
       data: { status, completedAt: status === 'completed' ? new Date() : undefined },
+      include: {
+        owner: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
     });
     res.json(updated);
   } catch (err: any) {

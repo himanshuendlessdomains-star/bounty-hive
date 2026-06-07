@@ -4,9 +4,6 @@ import { useBountyStore } from '../stores/bountyStore';
 import { api, mapBounty } from '../api/client';
 import { CreateBountyPayload } from '../types/bounty';
 
-// ─── Mock mode: no real contract calls ────────────────────────────────────────
-const USE_MOCK = !import.meta.env.VITE_API_URL;
-
 export function useBountyContract() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,23 +21,24 @@ export function useBountyContract() {
       setError(null);
 
       try {
-        // Create bounty via API (mock or real)
+        // Mock: create via API (which returns mock data)
         const backendBounty = await api.createBounty({
-          ...payload,
+          title: payload.title,
+          description: payload.description,
+          type: payload.type,
+          poolAmount: payload.poolAmount,
+          winnerCount: payload.winnerCount,
+          winnerSelection: payload.winnerSelection,
+          verification: payload.verification,
+          verificationRule: payload.verificationRule,
+          duration: payload.duration,
         });
 
-        if (USE_MOCK) {
-          // Mock mode: skip contract deployment, just return the API result
-          addBounty(mapBounty(backendBounty));
-          return backendBounty;
-        }
-
-        // Real mode: deploy escrow contract via TON Connect
-        // This will be implemented when smart contracts are ready
         addBounty(mapBounty(backendBounty));
         return backendBounty;
-      } catch (err: any) {
-        setError(err.message || 'Failed to create bounty');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to create bounty';
+        setError(msg);
         return null;
       } finally {
         setLoading(false);

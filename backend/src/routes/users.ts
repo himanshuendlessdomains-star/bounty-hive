@@ -28,10 +28,13 @@ router.get('/:id/bounties', async (req, res) => {
 
     const bounties = await prisma.bounty.findMany({
       where,
-      include: { _count: { select: { submissions: true } } },
+      include: {
+        owner: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        _count: { select: { submissions: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
-    res.json({ bounties });
+    res.json({ bounties: bounties.map(({ _count, ...b }) => ({ ...b, submissionCount: _count.submissions })) });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -45,6 +48,7 @@ router.get('/:id/submissions', async (req, res) => {
       where: { userId: req.params.id },
       include: {
         bounty: { select: { id: true, title: true, poolAmount: true, status: true } },
+        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },
       orderBy: { submittedAt: 'desc' },
     });
@@ -83,7 +87,10 @@ router.post('/', async (req, res) => {
       return res.json(user);
     }
 
-    res.status(400).json({ error: 'telegramId or tonAddress is required' });
+    // If neither, return the authenticated user
+    const user = await prisma.user.findUnique({ where: { id: callerId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    return res.json(user);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

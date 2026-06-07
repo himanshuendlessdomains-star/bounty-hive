@@ -53,7 +53,7 @@ router.patch('/:id', async (req, res) => {
 
     const updated = await prisma.submission.update({
       where: { id: req.params.id },
-n      data: { status, reviewedAt: new Date() },
+      data: { status, reviewedAt: new Date() },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
     });
     res.json(updated);

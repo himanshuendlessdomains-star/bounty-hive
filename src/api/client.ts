@@ -10,20 +10,20 @@ import {
 } from '../types/bounty';
 import { useWalletStore } from '../stores/walletStore';
 
-// VITE_API_URL must point to the /api prefix on the backend
-// e.g. https://bounty-hive.onrender.com/api
-// In dev this is handled by the Vite proxy (see vite.config.ts)
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-// Telegram initData is immutable for the session lifetime — read once
-const tgInitData: string =
-  typeof window !== 'undefined'
-    ? (window as any).Telegram?.WebApp?.initData ?? ''
-    : '';
+// Read Telegram initData dynamically per request (not cached at module load)
+function getTgInitData(): string {
+  try {
+    return (window as any).Telegram?.WebApp?.initData ?? '';
+  } catch {
+    return '';
+  }
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  // TON address is read dynamically so it reflects the currently connected wallet
   const tonAddress = useWalletStore.getState().address ?? '';
+  const tgInitData = getTgInitData();
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -153,7 +153,7 @@ export const api = {
   health: () => request<{ status: string; timestamp: string }>('/health'),
 };
 
-// ─── Domain mappers ───────────────────────────────────────────────────────────
+// ─── Response → Domain mappers ────────────────────────────────────────────────
 
 export function mapSubmission(r: SubmissionResponse): Submission {
   return {

@@ -10,6 +10,9 @@ import {
 } from '../types/bounty';
 import { useWalletStore } from '../stores/walletStore';
 
+// VITE_API_URL must point to the /api prefix on the backend
+// e.g. https://bounty-hive.onrender.com/api
+// In dev this is handled by the Vite proxy (see vite.config.ts)
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Telegram initData is immutable for the session lifetime — read once

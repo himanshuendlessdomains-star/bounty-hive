@@ -7,7 +7,7 @@ export function useSwap() {
   const [selectedToken, setSelectedToken] = useState<TokenAsset | null>(null);
   const [amount, setAmount] = useState('');
   const [quote, setQuote] = useState<SwapQuote | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [swapping, setSwapping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

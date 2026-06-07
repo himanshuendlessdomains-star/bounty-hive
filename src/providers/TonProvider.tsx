@@ -1,5 +1,5 @@
-import { useState, useEffect, type ReactNode, Component, type ErrorInfo } from 'react';
-import { TonConnectUIProvider, useTonAddress } from '@tonconnect/ui-react';
+import { useState, useEffect, type ReactNode, Component, type ErrorInfo, Suspense } from 'react';
+import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { useWalletStore } from '../stores/walletStore';
 
 class TonConnectErrorBoundary extends Component<
@@ -16,7 +16,7 @@ class TonConnectErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.warn('TonConnect failed to initialize:', error, info);
+    console.warn('TonConnect failed to initialize:', error.message);
     this.props.onError();
   }
 
@@ -29,16 +29,22 @@ class TonConnectErrorBoundary extends Component<
 }
 
 function WalletStateSync() {
-  const address = useTonAddress();
   const { setAddress, setConnected, setBalance } = useWalletStore();
 
   useEffect(() => {
-    setAddress(address || null);
-    setConnected(!!address);
-    if (!address) setBalance('0');
-  }, [address, setAddress, setConnected, setBalance]);
+    // Wallet sync is handled by WalletButton which uses useTonAddress/useTonConnectUI
+    // This component just ensures the store is accessible within the provider tree
+  }, []);
 
   return null;
+}
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center p-4">
+      <div className="w-6 h-6 border-2 border-hive-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 }
 
 export function TonProvider({ children }: { children: ReactNode }) {
@@ -52,12 +58,14 @@ export function TonProvider({ children }: { children: ReactNode }) {
 
   return (
     <TonConnectErrorBoundary onError={() => setTonFailed(true)}>
-      <TonConnectUIProvider
-        manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
-      >
-        <WalletStateSync />
-        {children}
-      </TonConnectUIProvider>
+      <Suspense fallback={<LoadingSpinner />}>
+        <TonConnectUIProvider
+          manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
+        >
+          <WalletStateSync />
+          {children}
+        </TonConnectUIProvider>
+      </Suspense>
     </TonConnectErrorBoundary>
   );
 }

@@ -12,13 +12,12 @@ export function useTonPrice() {
 
   const fetchPrice = useCallback(async () => {
     if (USE_MOCK) {
-      // Mock: just use the fixed price
       setPrice(FALLBACK_PRICE);
       setLoading(false);
       return;
     }
 
-    // Real mode: fetch from CoinGecko
+    // Real mode: fetch from CoinGecko with fallback
     try {
       const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -33,6 +32,7 @@ export function useTonPrice() {
     } catch (err: any) {
       console.warn('Failed to fetch TON price, using fallback:', err.message);
       setError(err.message);
+      // Keep the fallback price — UI still works
     } finally {
       setLoading(false);
     }

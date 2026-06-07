@@ -1,4 +1,4 @@
-import { useState, type ReactNode, Component, type ErrorInfo } from 'react';
+import { useState, useEffect, type ReactNode, Component, type ErrorInfo } from 'react';
 import { TonConnectUIProvider, useTonAddress } from '@tonconnect/ui-react';
 import { useWalletStore } from '../stores/walletStore';
 
@@ -40,9 +40,6 @@ function WalletStateSync() {
 
   return null;
 }
-
-// Need useEffect import
-import { useEffect } from 'react';
 
 export function TonProvider({ children }: { children: ReactNode }) {
   const [tonFailed, setTonFailed] = useState(false);

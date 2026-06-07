@@ -36,6 +36,7 @@ export interface Bounty {
     displayName: string | null;
     avatarUrl: string | null;
   };
+  submissionCount?: number;
 }
 
 export interface Submission {

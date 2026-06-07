@@ -20,7 +20,7 @@ export function BountyDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [proofUrl, setProofUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { submitProof } = useEscrowContract(bounty?.escrowAddress ?? null);
+  const { submitProof: submitOnChain } = useEscrowContract(bounty?.escrowAddress ?? null);
 
   useEffect(() => {
     if (!id) return;
@@ -39,7 +39,7 @@ export function BountyDetailPage() {
     try {
       await api.submitProof({ bountyId: bounty.id, proofUrl });
       if (bounty.escrowAddress) {
-        await submitProof(proofUrl);
+        await submitOnChain(proofUrl);
       }
       const res = await api.getBounty(bounty.id);
       setBounty(res);
@@ -69,14 +69,14 @@ export function BountyDetailPage() {
   if (error || !bounty) {
     return (
       <div className="p-4 pb-20 text-center">
-        <p className="text-4xl mb-3">\uD83D\uDE15</p>        <p className="text-[var(--text-secondary)]">{error || 'Bounty not found'}</p>
+        <p className="text-4xl mb-3">😕</p>
+        <p className="text-[var(--text-secondary)]">{error || 'Bounty not found'}</p>
         <button onClick={() => navigate('/')} className="btn-primary mt-4">Go back</button>
       </div>
     );
   }
 
   const isActive = bounty.status === 'active';
-  // Use userId (DB cuid) for ownership check, not wallet address
   const isOwner = userId === bounty.ownerId;
   const hasSubmitted = bounty.submissions?.some(
     (s) => s.userId === userId
@@ -86,7 +86,7 @@ export function BountyDetailPage() {
     <div className="pb-20">
       <div className="sticky top-0 bg-[var(--bg-primary)] z-40 p-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="text-[var(--text-secondary)] hover:text-white">\u2190 Back</button>
+          <button onClick={() => navigate(-1)} className="text-[var(--text-secondary)] hover:text-white">← Back</button>
           <WalletButton />
         </div>
       </div>
@@ -114,7 +114,7 @@ export function BountyDetailPage() {
           <div className="flex items-center gap-4 mb-4">
             <div>
               <p className="text-hive-500 font-bold text-2xl">{formatTon(bounty.poolAmount)} TON</p>
-              <p className="text-[var(--text-muted)] text-xs">\u2248 {formatUsd(bounty.poolUsd)}</p>
+              <p className="text-[var(--text-muted)] text-xs">≈ {formatUsd(bounty.poolUsd)}</p>
             </div>
             <div className="h-10 w-px bg-[var(--border)]" />
             <div>
@@ -127,26 +127,21 @@ export function BountyDetailPage() {
           {isActive && (
             <CountdownTimer targetDate={new Date(bounty.endsAt).getTime()} size="lg" />
           )}
-        </div>
 
-        {/* Details */}
-        <div className="card">
-          <h3 className="text-white font-semibold mb-3">Details</h3>
-          <div className="space-y-2 text-sm">
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-[var(--text-secondary)]">Type</span>
+              <span className="text-white capitalize">{bounty.type}</span>
+            </div>
             <div className="flex justify-between">
               <span className="text-[var(--text-secondary)]">Selection</span>
-              <span className="text-white">{bounty.winnerSelection === 'draw' ? 'Random Draw' : 'Manual Pick'}</span>
+              <span className="text-white capitalize">{bounty.winnerSelection}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--text-secondary)]">Verification</span>
-              <span className="text-white">{bounty.verification === 'manual' ? 'Manual Review' : 'Automatic'}</span>
+              <span className="text-white capitalize">{bounty.verification}</span>
             </div>
-            {bounty.verificationRule && (
-              <div className="flex justify-between">
-                <span className="text-[var(--text-secondary)]">Rule</span>
-                <span className="text-white">{bounty.verificationRule}</span>
-              </div>
-            )}
             <div className="flex justify-between">
               <span className="text-[var(--text-secondary)]">Platform fee</span>
               <span className="text-white">{bounty.platformFeeBps / 100}%</span>

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { fetchTokenList, getBestQuote, getSwapRoute, TON_ADDRESS } from '../api/stonfi';
 import { TokenAsset, SwapQuote, SwapRoute } from '../types/bounty';
 import { getTonConnectUI } from '../contracts/tonConnect';
-import { toNano, fromNano } from '../utils/format';
+import { toNano } from '../utils/format';
 
 export function useSwap() {
   const [tokens, setTokens] = useState<TokenAsset[]>([]);
@@ -26,7 +26,7 @@ export function useSwap() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedToken]);
 
   const simulate = useCallback(
     async (tokenAddress: string, offerUnits: string) => {
@@ -41,7 +41,7 @@ export function useSwap() {
           offerAddress: tokenAddress,
           askAddress: TON_ADDRESS,
           offerUnits,
-          slippageTolerance: '0.01', // 1%
+          slippageTolerance: '0.01',
         });
         setQuote(result);
       } catch (err) {
@@ -91,11 +91,10 @@ export function useSwap() {
             amount: txParams.value,
             payload: txParams.body,
           }],
-          validUntil: Math.floor(Date.now() / 1000) + 600, // 10 min
+          validUntil: Math.floor(Date.now() / 1000) + 600,
         });
 
-        // After successful swap, the user receives TON in their wallet
-        // Return the expected TON amount from the quote
+        // After successful swap, return the expected TON amount
         return {
           amount: swapQuote.minAskUnits,
           swapped: true,

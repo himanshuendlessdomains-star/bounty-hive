@@ -33,7 +33,7 @@ export function DiscoverPage() {
     <div className="pb-20">
       <div className="sticky top-0 bg-[var(--bg-primary)] z-40 p-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-bold text-white">🏴‍☠️ BountyHive</h1>
+          <h1 className="text-xl font-bold text-white">\uD83C\uDFF4\u200D\u2620\uFE0F BountyHive</h1>
           <WalletButton />
         </div>
         <input
@@ -54,7 +54,7 @@ export function DiscoverPage() {
                   : 'bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-white'
               }`}
             >
-              {type === 'all' ? '🔥 All' : type === 'task' ? '✅ Task' : type === 'quiz' ? '🧠 Quiz' : '🎨 Creative'}
+              {type === 'all' ? '\uD83D\uDD25 All' : type === 'task' ? '\u2705 Task' : type === 'quiz' ? '\uD83E\uDDE0 Quiz' : '\uD83C\uDFA8 Creative'}
             </button>
           ))}
         </div>
@@ -75,8 +75,10 @@ export function DiscoverPage() {
 
         {!loading && error && (
           <div className="text-center py-8">
-            <p className="text-red-400">{error}</p>
-            <button onClick={() => window.location.reload()} className="btn-secondary mt-2">
+            <p className="text-4xl mb-3">\u26A0\uFE0F</p>
+            <p className="text-red-400 mb-2">Failed to load bounties</p>
+            <p className="text-[var(--text-secondary)] text-sm mb-4">{error}</p>
+            <button onClick={() => window.location.reload()} className="btn-primary">
               Retry
             </button>
           </div>
@@ -84,21 +86,21 @@ export function DiscoverPage() {
 
         {!loading && !error && filtered.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-4xl mb-3">🔍</p>
+            <p className="text-4xl mb-3">\uD83D\uDD0D</p>
             <p className="text-[var(--text-secondary)]">No bounties found</p>
-            <p className="text-[var(--text-muted)] text-sm mt-1">Be the first to create one!</p>
+            {bounties.length > 0 && (
+              <p className="text-[var(--text-muted)] text-sm mt-1">Try a different search or filter</p>
+            )}
           </div>
         )}
 
-        {filtered.map((bounty) => (
-          <BountyCard key={bounty.id} bounty={bounty} onClick={() => navigate(`/bounty/${bounty.id}`)} />
+        {!loading && !error && filtered.map((bounty) => (
+          <BountyCard
+            key={bounty.id}
+            bounty={bounty}
+            onClick={() => navigate('/bounty/' + bounty.id)}
+          />
         ))}
-
-        {filtered.length > 0 && (
-          <p className="text-[var(--text-muted)] text-xs text-center pt-2">
-            Showing {filtered.length} bounties
-          </p>
-        )}
       </div>
     </div>
   );

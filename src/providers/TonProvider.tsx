@@ -1,6 +1,32 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, type ReactNode, Component, type ErrorInfo } from 'react';
 import { TonConnectUIProvider, useTonAddress } from '@tonconnect/ui-react';
 import { useWalletStore } from '../stores/walletStore';
+
+class TonConnectErrorBoundary extends Component<
+  { children: ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; onError: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('TonConnect failed to initialize:', error, info);
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <>{this.props.children}</>;
+    }
+    return this.props.children;
+  }
+}
 
 function WalletStateSync() {
   const address = useTonAddress();
@@ -15,21 +41,25 @@ function WalletStateSync() {
   return null;
 }
 
+// Need useEffect import
+import { useEffect } from 'react';
+
 export function TonProvider({ children }: { children: ReactNode }) {
   const [tonFailed, setTonFailed] = useState(false);
 
-  // If TonConnect fails to initialize (bad manifest, network error, etc.),
-  // still render the app — just without wallet features
+  // If TonConnect previously failed, render children without wallet
   if (tonFailed) {
     return <>{children}</>;
   }
 
   return (
-    <TonConnectUIProvider
-      manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
-    >
-      <WalletStateSync />
-      {children}
-    </TonConnectUIProvider>
+    <TonConnectErrorBoundary onError={() => setTonFailed(true)}>
+      <TonConnectUIProvider
+        manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
+      >
+        <WalletStateSync />
+        {children}
+      </TonConnectUIProvider>
+    </TonConnectErrorBoundary>
   );
 }

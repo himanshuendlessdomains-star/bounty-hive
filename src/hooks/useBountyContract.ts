@@ -22,6 +22,7 @@ export function useBountyContract() {
 
       try {
         // Mock: create via API (which returns mock data)
+        // Duration is always 24h — the API client defaults it
         const backendBounty = await api.createBounty({
           title: payload.title,
           description: payload.description,
@@ -31,7 +32,6 @@ export function useBountyContract() {
           winnerSelection: payload.winnerSelection,
           verification: payload.verification,
           verificationRule: payload.verificationRule,
-          duration: payload.duration,
         });
 
         addBounty(mapBounty(backendBounty));

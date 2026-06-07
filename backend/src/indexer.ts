@@ -1,102 +1,115 @@
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
+import { TonClient, Address, fromNano, toNano } from '@ton/ton';
+import { prisma } from './lib/prisma';
 
+// ─── TON Indexer ──────────────────────────────────────────────────────────────
+// Periodically checks escrow contracts for state changes and records payouts.
+// Runs alongside the API server.
+
+const TON_NETWORK = process.env.TON_NETWORK || 'mainnet';
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY || '';
 const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS || '';
-const POLL_INTERVAL = 10_000;
 
-export async function startIndexer(prisma: PrismaClient) {
-  console.log('🔍 Starting blockchain indexer...');
+const TON_ENDPOINT = TON_NETWORK === 'mainnet'
+  ? 'https://toncenter.com/api/v2/'
+  : 'https://testnet.toncenter.com/api/v2/';
 
+const POLL_INTERVAL = 30_000; // 30 seconds
+
+function createTonClient(): TonClient {
+  const headers: Record<string, string> = {};
+  if (TONCENTER_API_KEY) headers['X-API-Key'] = TONCENTER_API_KEY;
+  return new TonClient({
+    endpoint: TON_ENDPOINT,
+    options: { headers },
+  });
+}
+
+async function processBounty(bounty: { id: string; escrowAddress: string | null; status: string; poolAmount: string }) {
+  if (!bounty.escrowAddress) return;
+
+  try {
+    const client = createTonClient();
+    const addr = Address.parse(bounty.escrowAddress);
+
+    // Check if contract is still active
+    const state = await client.getContractState(addr);
+    if (state.state !== 'active') return;
+
+    // Read escrow state
+    const result = await client.runMethod(addr, 'get_bounty_state');
+    const reader = result.stack;
+
+    const onChainStatus = reader.readString();
+    const payoutDone = reader.readBoolean();
+
+    // Update bounty status if changed on-chain
+    if (onChainStatus !== bounty.status) {
+      await prisma.bounty.update({
+        where: { id: bounty.id },
+        data: { status: onChainStatus },
+      });
+      console.log(`[indexer] Bounty ${bounty.id} status: ${bounty.status} → ${onChainStatus}`);
+    }
+
+    // If payout is done on-chain, mark winners as paid
+    if (payoutDone) {
+      const unpaidWinners = await prisma.winner.findMany({
+        where: { bountyId: bounty.id, payoutTxHash: null },
+      });
+
+      if (unpaidWinners.length > 0) {
+        // Check recent transactions to the winner addresses for payout hashes
+        for (const winner of unpaidWinners) {
+          // In production, you'd look up the actual tx hash from the blockchain
+          // For now, mark as paid with a placeholder
+          await prisma.winner.update({
+            where: { id: winner.id },
+            data: {
+              paidAt: new Date(),
+              payoutTxHash: `escrow:${bounty.escrowAddress}`,
+            },
+          });
+        }
+        console.log(`[indexer] Marked ${unpaidWinners.length} winners as paid for bounty ${bounty.id}`);
+      }
+    }
+  } catch (err) {
+    // Contract might not be deployed yet or network issue — skip silently
+    console.warn(`[indexer] Error checking escrow ${bounty.escrowAddress}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+export async function startIndexer() {
   if (!FACTORY_ADDRESS) {
-    console.log('⚠️  No FACTORY_ADDRESS set, indexer will not start');
+    console.log('⏭️  Indexer skipped: FACTORY_ADDRESS not set');
     return;
   }
 
-  setInterval(async () => {
-    try { await pollBountyEvents(prisma); } catch (err) { console.error('Indexer poll error:', err); }
-  }, POLL_INTERVAL);
+  console.log(`🔍 Starting TON indexer (${TON_NETWORK})...`);
+  console.log(`   Factory: ${FACTORY_ADDRESS}`);
+  console.log(`   Poll interval: ${POLL_INTERVAL / 1000}s`);
 
-  await pollBountyEvents(prisma);
-}
-
-function cryptoShuffle<T>(arr: T[]): T[] {
-  const result = [...arr];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
-
-async function pollBountyEvents(prisma: PrismaClient) {
-  // Fetch TON price once per poll cycle
-  const tonPrice = await getTonPrice();
-
-  // 1. Move expired active bounties to review
-  const expiredActive = await prisma.bounty.findMany({
-    where: { status: 'active', endsAt: { lte: new Date() } },
-  });
-  for (const bounty of expiredActive) {
-    await prisma.bounty.update({ where: { id: bounty.id }, data: { status: 'review' } });
-    console.log(`📋 Bounty ${bounty.id} → review`);
-  }
-
-  // 2. Auto-complete review bounties past their review window
-  const reviewExpired = await prisma.bounty.findMany({
-    where: { status: 'review', reviewEndsAt: { lte: new Date() } },
-  });
-  for (const bounty of reviewExpired) {
-    const approved = await prisma.submission.findMany({
-      where: { bountyId: bounty.id, status: 'approved' },
-    });
-
-    if (approved.length === 0) {
-      await prisma.bounty.update({
-        where: { id: bounty.id },
-        data: { status: 'cancelled', completedAt: new Date() },
-      });
-      console.log(`💰 Bounty ${bounty.id} cancelled (no approved submissions)`);
-      continue;
-    }
-
-    const pool = bounty.winnerSelection === 'draw' ? cryptoShuffle(approved) : approved;
-    const winners = pool.slice(0, Math.min(bounty.winnerCount, approved.length));
-
-    for (const w of winners) {
-      await prisma.winner.create({
-        data: { bountyId: bounty.id, userId: w.userId, payoutAmount: bounty.perWinnerAmount },
-      });
-    }
-    await prisma.bounty.update({
-      where: { id: bounty.id },
-      data: { status: 'completed', completedAt: new Date() },
-    });
-    console.log(`🏆 Bounty ${bounty.id} completed with ${winners.length} winners`);
-  }
-
-  // 3. Update USD prices for active/review bounties
-  if (tonPrice > 0) {
-    const active = await prisma.bounty.findMany({
-      where: { status: { in: ['active', 'review'] } },
-    });
-    for (const bounty of active) {
-      await prisma.bounty.update({
-        where: { id: bounty.id },
-        data: {
-          poolUsd: (parseFloat(bounty.poolAmount) * tonPrice).toFixed(2),
-          perWinnerUsd: (parseFloat(bounty.perWinnerAmount) * tonPrice).toFixed(2),
+  async function tick() {
+    try {
+      // Get all active/review bounties with escrow addresses
+      const bounties = await prisma.bounty.findMany({
+        where: {
+          escrowAddress: { not: null },
+          status: { in: ['active', 'review'] },
         },
       });
+
+      for (const bounty of bounties) {
+        await processBounty(bounty);
+      }
+    } catch (err) {
+      console.error('[indexer] Tick error:', err);
     }
   }
-}
 
-async function getTonPrice(): Promise<number> {
-  try {
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd');
-    const data = await res.json();
-    return data['the-open-network']?.usd ?? 0;
-  } catch {
-    return 0;
-  }
+  // Initial tick
+  await tick();
+
+  // Schedule periodic ticks
+  setInterval(tick, POLL_INTERVAL);
 }

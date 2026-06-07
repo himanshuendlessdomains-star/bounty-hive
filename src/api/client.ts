@@ -11,12 +11,21 @@ import {
 import { useWalletStore } from '../stores/walletStore';
 import { MOCK_BOUNTIES } from './mock';
 
-// ─── Mock mode ────────────────────────────────────────────────────────────────
-// When VITE_API_URL is not set, return mock data instead of hitting a real backend.
-// Set VITE_API_URL in .env or Vercel env vars to switch to real API.
+// ─── Config ────────────────────────────────────────────────────────────────────
 const USE_MOCK = !import.meta.env.VITE_API_URL;
-
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+// ─── Timeout wrapper ───────────────────────────────────────────────────────────
+const TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number = TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out')), ms)
+    ),
+  ]);
+}
 
 function getTgInitData(): string {
   try {
@@ -36,13 +45,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (tgInitData) headers['x-telegram-init-data'] = tgInitData;
   if (tonAddress) headers['x-ton-address'] = tonAddress;
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      ...headers,
-      ...(options?.headers as Record<string, string> || {}),
-    },
-  });
+  const res = await withTimeout(
+    fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        ...headers,
+        ...(options?.headers as Record<string, string> || {}),
+      },
+    }),
+  );
 
   if (!res.ok) {
     let errorMsg = `HTTP ${res.status}`;
@@ -62,7 +73,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const MOCK_DELAY = 400;
 
-// ─── Response types ───────────────────────────────────────────────────────────
+// ─── Response types ────────────────────────────────────────────────────────────
 
 export interface BountyResponse {
   id: string;
@@ -157,187 +168,93 @@ export const api = {
     winnerSelection: string;
     verification: string;
     verificationRule?: string;
-    duration?: number;
     escrowAddress?: string;
   }) => {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
-      const now = Date.now();
-      const dur = data.duration ?? 24;
-      return {
-        id: `bounty-${Date.now()}`,
-        escrowAddress: null,
-        title: data.title,
-        description: data.description,
-        type: data.type,
-        poolAmount: data.poolAmount,
-        poolUsd: String(parseFloat(data.poolAmount) * 3.25),
-        winnerCount: data.winnerCount,
-        perWinnerAmount: String(parseFloat(data.poolAmount) / data.winnerCount),
-        perWinnerUsd: String((parseFloat(data.poolAmount) / data.winnerCount) * 3.25),
-        winnerSelection: data.winnerSelection,
-        verification: data.verification,
-        verificationRule: data.verificationRule ?? '',
+      const newBounty = {
+        ...data,
+        id: `mock-${Date.now()}`,
         status: 'active',
-        duration: dur,
-        platformFeeBps: 100,
-        createdAt: new Date(now).toISOString(),
-        endsAt: new Date(now + dur * 3600000).toISOString(),
-        reviewEndsAt: new Date(now + dur * 3600000 + 86400000).toISOString(),
-        completedAt: null,
-        ownerId: 'user-1',
-        owner: { id: 'user-1', username: 'bountyhive', displayName: 'BountyHive', avatarUrl: null },
-        submissions: [],
-        winners: [],
-        submissionCount: 0,
-      } as BountyResponse;
+        createdAt: new Date().toISOString(),
+        ownerId: 'mock-user',
+      };
+      return newBounty;
     }
-    return request<BountyResponse>('/bounties', { method: 'POST', body: JSON.stringify(data) });
+    return request<BountyResponse>('/bounties', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 
-  updateBounty: async (id: string, data: { status: string }) => {
+  submitProof: async (bountyId: string, proofUrl: string) => {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
-      const bounty = MOCK_BOUNTIES.find((b) => b.id === id);
-      if (!bounty) throw new Error('Bounty not found');
-      return { ...bounty, ...data } as BountyResponse;
+      return { id: `mock-sub-${Date.now()}`, bountyId, proofUrl, status: 'pending' };
     }
-    return request<BountyResponse>(`/bounties/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    return request<SubmissionResponse>(`/bounties/${bountyId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ proofUrl }),
+    });
   },
 
-  submitProof: async (data: { bountyId: string; proofUrl: string }) => {
+  upsertUser: async (data: { tonAddress: string; displayName?: string }) => {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
-      return {
-        id: `sub-${Date.now()}`,
-        bountyId: data.bountyId,
-        userId: 'user-me',
-        proofUrl: data.proofUrl,
-        status: 'pending',
-        submittedAt: new Date().toISOString(),
-        reviewedAt: null,
-        user: { id: 'user-me', username: 'me', displayName: 'Me', avatarUrl: null },
-      } as SubmissionResponse;
+      return { id: `user-${data.tonAddress.slice(0, 8)}`, tonAddress: data.tonAddress, username: null, displayName: data.displayName || data.tonAddress.slice(0, 6) + '...' };
     }
-    return request<SubmissionResponse>('/submissions', { method: 'POST', body: JSON.stringify(data) });
-  },
-
-  updateSubmission: async (id: string, status: 'approved' | 'rejected') => {
-    if (USE_MOCK) {
-      await delay(MOCK_DELAY);
-      return { id, status } as SubmissionResponse;
-    }
-    return request<SubmissionResponse>(`/submissions/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-  },
-
-  getUser: async (id: string) => {
-    if (USE_MOCK) {
-      await delay(MOCK_DELAY);
-      return { id, username: 'demo_user', displayName: 'Demo User', avatarUrl: null };
-    }
-    return request<any>(`/users/${id}`);
-  },
-
-  getUserBounties: async (id: string, status?: string) => {
-    if (USE_MOCK) {
-      await delay(MOCK_DELAY);
-      let filtered = MOCK_BOUNTIES.filter((b) => b.ownerId === id);
-      if (status) filtered = filtered.filter((b) => b.status === status);
-      return { bounties: filtered };
-    }
-    const query = status ? `?status=${status}` : '';
-    return request<{ bounties: BountyResponse[] }>(`/users/${id}/bounties${query}`);
-  },
-
-  getUserSubmissions: async (id: string) => {
-    if (USE_MOCK) {
-      await delay(MOCK_DELAY);
-      const subs: SubmissionResponse[] = [];
-      MOCK_BOUNTIES.forEach((b) => {
-        b.submissions.forEach((s) => {
-          if (s.userId === id) subs.push(s);
-        });
-      });
-      return { submissions: subs };
-    }
-    return request<{ submissions: SubmissionResponse[] }>(`/users/${id}/submissions`);
-  },
-
-  upsertUser: async (data: {
-    telegramId?: string;
-    tonAddress?: string;
-    username?: string;
-    displayName?: string;
-    avatarUrl?: string;
-  }) => {
-    if (USE_MOCK) {
-      await delay(MOCK_DELAY);
-      return { id: 'user-me', ...data };
-    }
-    return request<any>('/users', { method: 'POST', body: JSON.stringify(data) });
-  },
-
-  health: async () => {
-    if (USE_MOCK) {
-      return { status: 'ok', timestamp: new Date().toISOString() };
-    }
-    return request<{ status: string; timestamp: string }>('/health');
+    return request<{ id: string; tonAddress: string; username: string | null; displayName: string | null }>('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };
 
-// ─── Response → Domain mappers ────────────────────────────────────────────────
+// ─── Map API response → frontend Bounty type ────────────────────────────────────
 
-export function mapSubmission(r: SubmissionResponse): Submission {
+export function mapBounty(b: BountyResponse): Bounty {
   return {
-    id: r.id,
-    bountyId: r.bountyId,
-    userId: r.userId,
-    proofUrl: r.proofUrl,
-    status: r.status as SubmissionStatus,
-    submittedAt: r.submittedAt,
-    reviewedAt: r.reviewedAt,
-    user: r.user,
-  };
-}
-
-export function mapWinner(r: WinnerResponse): Winner {
-  return {
-    id: r.id,
-    bountyId: r.bountyId,
-    userId: r.userId,
-    payoutAmount: r.payoutAmount,
-    payoutTxHash: r.payoutTxHash,
-    paidAt: r.paidAt,
-    user: r.user,
-  };
-}
-
-export function mapBounty(r: BountyResponse): Bounty {
-  return {
-    id: r.id,
-    escrowAddress: r.escrowAddress ?? undefined,
-    title: r.title,
-    description: r.description,
-    type: r.type as BountyType,
-    poolAmount: r.poolAmount,
-    poolUsd: r.poolUsd,
-    winnerCount: r.winnerCount,
-    perWinnerAmount: r.perWinnerAmount,
-    perWinnerUsd: r.perWinnerUsd,
-    winnerSelection: r.winnerSelection as WinnerSelection,
-    verification: r.verification as VerificationMethod,
-    verificationRule: r.verificationRule,
-    status: r.status as BountyStatus,
-    duration: r.duration,
-    platformFeeBps: r.platformFeeBps,
-    ownerId: r.ownerId,
-    submissions: (r.submissions ?? []).map(mapSubmission),
-    winners: (r.winners ?? []).map(mapWinner),
-    endsAt: new Date(r.endsAt).getTime(),
-    reviewEndsAt: r.reviewEndsAt ? new Date(r.reviewEndsAt).getTime() : undefined,
-    completedAt: r.completedAt ? new Date(r.completedAt).getTime() : undefined,
-    createdAt: r.createdAt,
-    owner: r.owner,
-    submissionCount: r.submissionCount,
+    id: b.id,
+    escrowAddress: b.escrowAddress,
+    title: b.title,
+    description: b.description,
+    type: b.type as BountyType,
+    poolAmount: b.poolAmount,
+    poolUsd: b.poolUsd,
+    winnerCount: b.winnerCount,
+    perWinnerAmount: b.perWinnerAmount,
+    perWinnerUsd: b.perWinnerUsd,
+    winnerSelection: b.winnerSelection as WinnerSelection,
+    verification: b.verification as VerificationMethod,
+    verificationRule: b.verificationRule,
+    status: b.status as BountyStatus,
+    duration: b.duration,
+    platformFeeBps: b.platformFeeBps,
+    createdAt: b.createdAt,
+    endsAt: b.endsAt,
+    reviewEndsAt: b.reviewEndsAt,
+    completedAt: b.completedAt,
+    ownerId: b.ownerId,
+    owner: b.owner,
+    submissions: (b.submissions || []).map((s: SubmissionResponse) => ({
+      id: s.id,
+      bountyId: s.bountyId,
+      userId: s.userId,
+      proofUrl: s.proofUrl,
+      status: s.status as SubmissionStatus,
+      submittedAt: s.submittedAt,
+      reviewedAt: s.reviewedAt,
+      user: s.user,
+    })),
+    winners: (b.winners || []).map((w: WinnerResponse) => ({
+      id: w.id,
+      bountyId: w.bountyId,
+      userId: w.userId,
+      payoutAmount: w.payoutAmount,
+      payoutTxHash: w.payoutTxHash,
+      paidAt: w.paidAt,
+      user: w.user,
+    })),
+    submissionCount: b.submissionCount ?? b.submissions?.length ?? 0,
   };
 }

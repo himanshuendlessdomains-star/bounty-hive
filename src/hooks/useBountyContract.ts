@@ -47,7 +47,7 @@ export function useBountyContract() {
         const poolAmountNano = toNano(payload.poolAmount).toString();
 
         // 3. If factory address is configured, deploy escrow on-chain
-        let onChainEscrowAddress: string | undefined;
+        let onChainEscrowAddress: string | null = null;
 
         if (FACTORY_ADDRESS) {
           try {
@@ -55,9 +55,9 @@ export function useBountyContract() {
 
             // Build CreateBounty message body
             const body = beginCell()
-              .storeUint(CREATE_BOUNTY_OP, 32)  // op code
-              .storeUint(0, 64)                  // query_id
-              .storeRef(beginCell()              // ref with string data
+              .storeUint(CREATE_BOUNTY_OP, 32)
+              .storeUint(0, 64)
+              .storeRef(beginCell()
                 .storeStringTail(payload.title)
                 .endCell())
               .storeRef(beginCell()
@@ -66,7 +66,7 @@ export function useBountyContract() {
               .storeRef(beginCell()
                 .storeStringTail(payload.type)
                 .endCell())
-              .storeUint(payload.winnerCount, 32) // winnerCount
+              .storeUint(payload.winnerCount, 32)
               .storeRef(beginCell()
                 .storeStringTail(payload.winnerSelection)
                 .endCell())
@@ -78,7 +78,6 @@ export function useBountyContract() {
                 .endCell())
               .endCell();
 
-            // Add gas for escrow deployment (0.05 TON on top of pool)
             const totalAmount = BigInt(poolAmountNano) + toNano('0.05');
 
             const result = await ui.sendTransaction({
@@ -92,11 +91,8 @@ export function useBountyContract() {
 
             console.log('Bounty creation tx sent:', result.boc);
 
-            // Wait for the transaction to be processed
             await new Promise(r => setTimeout(r, 5000));
 
-            // Try to read the escrow address from the factory
-            // This is best-effort — the backend will also track it via indexer
             try {
               const response = await fetch(
                 `${import.meta.env.VITE_API_URL || '/api'}/bounties?owner=${currentUserId}&limit=1`
@@ -107,7 +103,6 @@ export function useBountyContract() {
                   const latest = bounties[0];
                   if (latest.escrowAddress) {
                     onChainEscrowAddress = latest.escrowAddress;
-                    setEscrowAddress(onChainEscrowAddress);
                   }
                 }
               }
@@ -115,12 +110,11 @@ export function useBountyContract() {
               console.warn('Could not fetch escrow address from backend:', err);
             }
           } catch (err: unknown) {
-            // If on-chain deployment fails, still create in DB (without escrow)
             console.warn('On-chain deployment failed, creating bounty in DB only:', err);
           }
         }
 
-        // 4. Create bounty in backend (with or without escrow address)
+        // 4. Create bounty in backend
         const backendBounty = await api.createBounty({
           title: payload.title,
           description: payload.description,
@@ -130,8 +124,12 @@ export function useBountyContract() {
           winnerSelection: payload.winnerSelection,
           verification: payload.verification,
           verificationRule: payload.verificationRule,
-          escrowAddress: onChainEscrowAddress,
+          escrowAddress: onChainEscrowAddress ?? undefined,
         });
+
+        if (onChainEscrowAddress) {
+          setEscrowAddress(onChainEscrowAddress);
+        }
 
         addBounty(mapBounty(backendBounty));
         return backendBounty;

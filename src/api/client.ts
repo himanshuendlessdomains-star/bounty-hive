@@ -1,7 +1,5 @@
 import {
   Bounty,
-  Submission,
-  Winner,
   BountyType,
   WinnerSelection,
   VerificationMethod,
@@ -169,17 +167,40 @@ export const api = {
     verification: string;
     verificationRule?: string;
     escrowAddress?: string;
-  }) => {
+  }): Promise<BountyResponse> => {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
-      const newBounty = {
-        ...data,
+      const now = new Date().toISOString();
+      const endsAt = new Date(Date.now() + 7 * 86400000).toISOString();
+      const reviewEndsAt = new Date(Date.now() + 10 * 86400000).toISOString();
+      const perWinnerAmount = (parseFloat(data.poolAmount) / data.winnerCount).toFixed(6);
+      return {
         id: `mock-${Date.now()}`,
+        escrowAddress: data.escrowAddress ?? null,
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        poolAmount: data.poolAmount,
+        poolUsd: '0',
+        winnerCount: data.winnerCount,
+        perWinnerAmount,
+        perWinnerUsd: '0',
+        winnerSelection: data.winnerSelection,
+        verification: data.verification,
+        verificationRule: data.verificationRule ?? '',
         status: 'active',
-        createdAt: new Date().toISOString(),
+        duration: 7,
+        platformFeeBps: 100,
+        createdAt: now,
+        endsAt,
+        reviewEndsAt,
+        completedAt: null,
         ownerId: 'mock-user',
+        owner: { id: 'mock-user', username: null, displayName: 'Mock User', avatarUrl: null },
+        submissions: [],
+        winners: [],
+        submissionCount: 0,
       };
-      return newBounty;
     }
     return request<BountyResponse>('/bounties', {
       method: 'POST',
@@ -187,14 +208,25 @@ export const api = {
     });
   },
 
-  submitProof: async (bountyId: string, proofUrl: string) => {
+  submitProof: async (data: { bountyId: string; proofUrl: string }) => {
     if (USE_MOCK) {
       await delay(MOCK_DELAY);
-      return { id: `mock-sub-${Date.now()}`, bountyId, proofUrl, status: 'pending' };
+      return { id: `mock-sub-${Date.now()}`, bountyId: data.bountyId, proofUrl: data.proofUrl, status: 'pending' };
     }
-    return request<SubmissionResponse>(`/bounties/${bountyId}/submit`, {
+    return request<SubmissionResponse>(`/bounties/${data.bountyId}/submit`, {
       method: 'POST',
-      body: JSON.stringify({ proofUrl }),
+      body: JSON.stringify({ proofUrl: data.proofUrl }),
+    });
+  },
+
+  updateSubmission: async (submissionId: string, status: 'approved' | 'rejected') => {
+    if (USE_MOCK) {
+      await delay(MOCK_DELAY);
+      return { id: submissionId, status };
+    }
+    return request<SubmissionResponse>(`/submissions/${submissionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     });
   },
 
@@ -212,10 +244,20 @@ export const api = {
 
 // ─── Map API response → frontend Bounty type ────────────────────────────────────
 
+function toNum(val: string | number | null | undefined, fallback: number = 0): number {
+  if (val === null || val === undefined) return fallback;
+  const n = typeof val === 'number' ? val : Number(val);
+  return isNaN(n) ? fallback : n;
+}
+
+function toStr(val: string | null | undefined, fallback: string = ''): string {
+  return val ?? fallback;
+}
+
 export function mapBounty(b: BountyResponse): Bounty {
   return {
     id: b.id,
-    escrowAddress: b.escrowAddress,
+    escrowAddress: b.escrowAddress ?? undefined,
     title: b.title,
     description: b.description,
     type: b.type as BountyType,
@@ -228,12 +270,12 @@ export function mapBounty(b: BountyResponse): Bounty {
     verification: b.verification as VerificationMethod,
     verificationRule: b.verificationRule,
     status: b.status as BountyStatus,
-    duration: b.duration,
-    platformFeeBps: b.platformFeeBps,
+    duration: toNum(b.duration),
+    platformFeeBps: toNum(b.platformFeeBps),
     createdAt: b.createdAt,
-    endsAt: b.endsAt,
-    reviewEndsAt: b.reviewEndsAt,
-    completedAt: b.completedAt,
+    endsAt: toNum(b.endsAt),
+    reviewEndsAt: toNum(b.reviewEndsAt),
+    completedAt: b.completedAt ? toNum(b.completedAt) : undefined,
     ownerId: b.ownerId,
     owner: b.owner,
     submissions: (b.submissions || []).map((s: SubmissionResponse) => ({
@@ -243,7 +285,7 @@ export function mapBounty(b: BountyResponse): Bounty {
       proofUrl: s.proofUrl,
       status: s.status as SubmissionStatus,
       submittedAt: s.submittedAt,
-      reviewedAt: s.reviewedAt,
+      reviewedAt: s.reviewedAt ?? undefined,
       user: s.user,
     })),
     winners: (b.winners || []).map((w: WinnerResponse) => ({
@@ -252,9 +294,9 @@ export function mapBounty(b: BountyResponse): Bounty {
       userId: w.userId,
       payoutAmount: w.payoutAmount,
       payoutTxHash: w.payoutTxHash,
-      paidAt: w.paidAt,
+      paidAt: w.paidAt ?? undefined,
       user: w.user,
     })),
-    submissionCount: b.submissionCount ?? b.submissions?.length ?? 0,
+    submissionCount: toNum(b.submissionCount ?? b.submissions?.length ?? 0),
   };
 }

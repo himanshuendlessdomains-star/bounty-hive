@@ -5,7 +5,7 @@ import { useTonPrice } from '../hooks/useTonPrice';
 import { TokenSelector } from './TokenSelector';
 import { SwapPreview } from './SwapPreview';
 import { TON_ADDRESS } from '../api/stonfi';
-import { toNano } from '../utils/format';
+import { toNano, fromNano } from '../utils/format';
 import { useWalletStore } from '../stores/walletStore';
 
 interface DepositFlowProps {
@@ -43,7 +43,6 @@ export function DepositFlow({ onDeposit, loading }: DepositFlowProps) {
 
   const handleConfirm = () => { if (swapResult) onDeposit(swapResult.amount); };
 
-  // For direct TON deposits, skip swap and go straight to confirm
   const handleDirectTonDeposit = () => {
     if (!amount || parseFloat(amount) <= 0) return;
     const tonAmount = toNano(amount).toString();

@@ -33,7 +33,9 @@ export function MyBountiesPage() {
             try {
               const b = await api.getBounty(s.bountyId);
               fetched.push(mapBounty(b));
-            } catch { /* skip */ }
+            } catch {
+              // skip if bounty not found
+            }
           }
           setBounties(fetched);
         })
@@ -41,6 +43,10 @@ export function MyBountiesPage() {
         .finally(() => setLoading(false));
     }
   }, [address, tab]);
+
+  const tabButtonClass = (isActive: boolean) =>
+    'flex-1 py-2 rounded-lg text-sm font-medium transition-colors ' +
+    (isActive ? 'bg-hive-500 text-white' : 'bg-[var(--bg-input)] text-[var(--text-secondary)]');
 
   if (!connected) {
     return (
@@ -51,7 +57,7 @@ export function MyBountiesPage() {
             <WalletButton />
           </div>
           <div className="text-center py-12">
-            <p className="text-4xl mb-3">👛</p>
+            <p className="text-4xl mb-3">{'\uD83D\uDC5B'}</p>
             <p className="text-[var(--text-secondary)]">
               Connect your wallet to see your bounties
             </p>
@@ -69,24 +75,10 @@ export function MyBountiesPage() {
           <WalletButton />
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setTab('created')}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === 'created'
-                ? 'bg-hive-500 text-white'
-                : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-            }`
-          >
+          <button onClick={() => setTab('created')} className={tabButtonClass(tab === 'created')}>
             Created
           </button>
-          <button
-            onClick={() => setTab('submitted')}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === 'submitted'
-                ? 'bg-hive-500 text-white'
-                : 'bg-[var(--bg-input)] text-[var(--text-secondary)]'
-            }`
-          >
+          <button onClick={() => setTab('submitted')} className={tabButtonClass(tab === 'submitted')}>
             Submitted
           </button>
         </div>
@@ -104,7 +96,7 @@ export function MyBountiesPage() {
           </div>
         ) : bounties.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-4xl mb-3">{tab === 'created' ? '🏴‍☠️' : '🔍'}</p>
+            <p className="text-4xl mb-3">{tab === 'created' ? '\uD83C\uDFF4\u200D\u2620\uFE0F' : '\uD83D\uDD0D'}</p>
             <p className="text-[var(--text-secondary)]">
               {tab === 'created' ? 'No bounties created yet' : 'No submissions yet'}
             </p>
@@ -119,7 +111,7 @@ export function MyBountiesPage() {
             <BountyCard
               key={bounty.id}
               bounty={bounty}
-              onClick={() => navigate(`/bounty/${bounty.id}`)}
+              onClick={() => navigate('/bounty/' + bounty.id)}
             />
           ))
         )}

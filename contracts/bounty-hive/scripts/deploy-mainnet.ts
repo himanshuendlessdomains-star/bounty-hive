@@ -1,7 +1,6 @@
-import { TonClient, WalletContractV4 } from '@ton/ton';
+import { TonClient, WalletContractV4, Address, toNano, fromNano } from '@ton/ton';
 import { mnemonicToPrivateKey } from '@ton/crypto';
 import { BountyFactory } from '../build/BountyFactory/BountyFactory_BountyFactory';
-import { toNano } from '@ton/core';
 
 // ─── Mainnet Deployment ──────────────────────────────────────────────────────
 //
@@ -13,6 +12,10 @@ import { toNano } from '@ton/core';
 //
 // ⚠️  This uses REAL TON. Double-check everything before running.
 
+// Platform wallet — receives 1% platform fee on all bounties
+const PLATFORM_ADDRESS = Address.parse('UQBt5d56LX8GnpYsTl9NVn2h4TNVcKlagsa3HpG2mVZfG5kx');
+const PLATFORM_FEE_BPS = 100; // 100 basis points = 1%
+
 async function deploy() {
   const mnemonic = process.env.MNEMONIC;
   if (!mnemonic) {
@@ -23,7 +26,12 @@ async function deploy() {
   console.log('🔑 Loading wallet...');
   const key = await mnemonicToPrivateKey(mnemonic.split(' '));
 
-  const client = new TonClient({ endpoint: 'https://toncenter.com/api/v2/' });
+  const client = new TonClient({
+    endpoint: 'https://toncenter.com/api/v2/',
+    options: {
+      apiKey: process.env.TONCENTER_API_KEY,
+    },
+  });
 
   const wallet = client.open(
     WalletContractV4.create({ workchain: 0, publicKey: key.publicKey })
@@ -33,8 +41,7 @@ async function deploy() {
   console.log(`💰 Wallet: ${walletAddress}`);
 
   const balance = await wallet.getBalance();
-  const balanceTon = (Number(balance) / 1e9).toFixed(4);
-  console.log(`   Balance: ${balanceTon} TON`);
+  console.log(`   Balance: ${fromNano(balance)} TON`);
 
   if (balance < toNano('0.3')) {
     console.error('❌ Wallet balance too low (need at least 0.3 TON for gas)');
@@ -44,11 +51,13 @@ async function deploy() {
   // ─── Deploy BountyFactory ────────────────────────────────────────────────
 
   console.log('\n📦 Deploying BountyFactory to mainnet...');
+  console.log(`   Platform address: ${PLATFORM_ADDRESS.toString()}`);
+  console.log(`   Platform fee: ${PLATFORM_FEE_BPS / 100}%`);
   console.log('   ⚠️  This will spend real TON. Ctrl+C to abort. Waiting 5 seconds...');
   await new Promise((r) => setTimeout(r, 5000));
 
   const factory = client.open(
-    BountyFactory.fromInit(100, wallet.address) // 100 bps = 1% platform fee
+    BountyFactory.fromInit(PLATFORM_FEE_BPS, PLATFORM_ADDRESS)
   );
 
   const factoryAddress = factory.address.toString({ bounceable: true });
@@ -58,16 +67,37 @@ async function deploy() {
   if (factoryState.state === 'active') {
     console.log('   ✅ Factory already deployed at this address');
   } else {
+    // Deploy via wallet
+    const seqno = await wallet.getSeqno();
     await wallet.send(key.secretKey, {
       to: factory.address,
-      value: toNano('0.2'),
+      value: toNano('0.25'),
       body: 'deploy',
       sendMode: 3,
     });
 
     console.log('   ⏳ Waiting for confirmation (up to 60s)...');
-    await waitForDeployment(client, factory.address, 30);
-    console.log('   ✅ Factory deployed!');
+    // Wait for seqno to change
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const newSeqno = await wallet.getSeqno();
+      if (newSeqno > seqno) {
+        console.log('   ✅ Transaction confirmed!');
+        break;
+      }
+      if (i === 59) {
+        console.log('   ⚠️  Timeout waiting for confirmation. Check explorer:');
+      }
+    }
+
+    // Verify deployment
+    const newState = await client.getContractState(factory.address);
+    if (newState.state === 'active') {
+      console.log('   ✅ Factory deployed and active!');
+    } else {
+      console.log('   ⚠️  Factory state:', newState.state);
+      console.log('   Check https://tonscan.org/address/' + factoryAddress);
+    }
   }
 
   console.log('\n' + '='.repeat(60));
@@ -75,24 +105,17 @@ async function deploy() {
   console.log('='.repeat(60));
   console.log(`
 Factory address: ${factoryAddress}
+Platform address: ${PLATFORM_ADDRESS.toString()}
+Platform fee: ${PLATFORM_FEE_BPS / 100}%
 
 Set these in Vercel environment variables:
-  VITE_MAINNET_FACTORY_ADDRESS = ${factoryAddress}
-  VITE_TON_NETWORK             = mainnet
+  VITE_FACTORY_ADDRESS = ${factoryAddress}
+  VITE_TON_NETWORK    = mainnet
 
 Set these in Render environment variables:
   FACTORY_ADDRESS = ${factoryAddress}
   TON_NETWORK     = mainnet
 `);
-}
-
-async function waitForDeployment(client: TonClient, address: any, maxAttempts: number) {
-  for (let i = 0; i < maxAttempts; i++) {
-    const state = await client.getContractState(address);
-    if (state.state === 'active') return;
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  throw new Error('Deployment timeout — check the explorer for transaction status');
 }
 
 deploy().catch(console.error);

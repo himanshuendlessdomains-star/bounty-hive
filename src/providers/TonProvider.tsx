@@ -44,7 +44,8 @@ function WalletStateSync() {
 export function TonProvider({ children }: { children: ReactNode }) {
   const [tonFailed, setTonFailed] = useState(false);
 
-  // If TonConnect previously failed, render children without wallet
+  // If TonConnect previously failed, render children without wallet provider.
+  // WalletButton has its own error boundary for the missing context case.
   if (tonFailed) {
     return <>{children}</>;
   }

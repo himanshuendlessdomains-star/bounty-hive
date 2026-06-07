@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { prisma } from '../lib/prisma';
 
 interface TelegramUser {
   id: number;
@@ -30,7 +31,7 @@ function validateTelegramHash(initData: string, botToken: string): boolean {
   }
 }
 
-export function telegramAuth(req: Request, res: Response, next: NextFunction) {
+export async function telegramAuth(req: Request, res: Response, next: NextFunction) {
   // Read operations are public — no auth needed
   if (req.method === 'GET') return next();
 
@@ -39,13 +40,24 @@ export function telegramAuth(req: Request, res: Response, next: NextFunction) {
 
   // Development bypass
   if (process.env.NODE_ENV === 'development' && !initData && !tonAddress) {
-    req.user = { id: 'dev-user', telegramId: '0', username: 'dev', displayName: 'Dev User' };
+    // Ensure dev user exists in DB
+    const devUser = await prisma.user.upsert({
+      where: { id: 'dev-user' },
+      update: {},
+      create: { id: 'dev-user', telegramId: '0', username: 'dev', displayName: 'Dev User' },
+    });
+    req.user = { id: devUser.id, telegramId: '0', username: devUser.username ?? undefined, displayName: devUser.displayName ?? undefined };
     return next();
   }
 
   // Chrome / browser users: TON wallet address as identity
   if (!initData && tonAddress) {
-    req.user = { id: tonAddress, telegramId: '', username: undefined, displayName: undefined };
+    const user = await prisma.user.upsert({
+      where: { tonAddress },
+      update: {},
+      create: { tonAddress, displayName: tonAddress.slice(0, 8) + '...' },
+    });
+    req.user = { id: user.id, telegramId: user.telegramId ?? '', username: user.username ?? undefined, displayName: user.displayName ?? undefined };
     return next();
   }
 
@@ -66,12 +78,30 @@ export function telegramAuth(req: Request, res: Response, next: NextFunction) {
     if (!userJson) return res.status(401).json({ error: 'Missing user in auth data' });
 
     const tgUser: TelegramUser = JSON.parse(userJson);
+    const telegramId = String(tgUser.id);
+
+    // Upsert Telegram user in DB
+    const user = await prisma.user.upsert({
+      where: { telegramId },
+      update: {
+        username: tgUser.username,
+        displayName: tgUser.first_name + (tgUser.last_name ? ` ${tgUser.last_name}` : ''),
+        avatarUrl: tgUser.photo_url,
+      },
+      create: {
+        telegramId,
+        username: tgUser.username,
+        displayName: tgUser.first_name + (tgUser.last_name ? ` ${tgUser.last_name}` : ''),
+        avatarUrl: tgUser.photo_url,
+      },
+    });
+
     req.user = {
-      id: String(tgUser.id),
-      telegramId: String(tgUser.id),
-      username: tgUser.username,
-      displayName: tgUser.first_name + (tgUser.last_name ? ` ${tgUser.last_name}` : ''),
-      avatarUrl: tgUser.photo_url,
+      id: user.id,
+      telegramId: user.telegramId ?? '',
+      username: user.username ?? undefined,
+      displayName: user.displayName ?? undefined,
+      avatarUrl: user.avatarUrl ?? undefined,
     };
     next();
   } catch {

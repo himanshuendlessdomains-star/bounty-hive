@@ -112,6 +112,26 @@ export interface SwapRoute {
   };
 }
 
+// ─── Escrow Contract Types ────────────────────────────────────────────────────
+
+export interface EscrowState {
+  status: 'active' | 'review' | 'completed' | 'cancelled';
+  poolAmount: bigint;
+  winnerCount: number;
+  perWinnerAmount: bigint;
+  platformFeeBps: number;
+  submissionCount: number;
+  payoutDone: boolean;
+  endsAt: number;
+  reviewEndsAt: number;
+}
+
+export interface FactoryContractState {
+  bountyCount: number;
+  platformFeeBps: number;
+  platformAddress: string;
+}
+
 // ─── UI Types ─────────────────────────────────────────────────────────────────
 
 export interface CreateBountyStep {

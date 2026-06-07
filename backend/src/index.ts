@@ -16,18 +16,26 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+// ALLOWED_ORIGINS: comma-separated list of origins, or "*" to allow all.
+// Defaults to localhost:5173 for development.
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
   : ['http://localhost:5173'];
 
+const ALLOW_ALL = ALLOWED_ORIGINS.includes('*');
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow server-to-server / health checks
-      if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      callback(new Error(`CORS: ${origin} not allowed`));
+      // Allow server-to-server requests (no origin header)
+      if (!origin) return callback(null, true);
+      // Wildcard mode
+      if (ALLOW_ALL) return callback(null, true);
+      // Check against allowlist
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // Origin not in allowlist — reject the request gracefully (no throw)
+      return callback(null, false);
     },
     credentials: true,
   })
@@ -50,17 +58,18 @@ app.use('/api/bounties', bountyRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/users', userRoutes);
 
-// ─── Error handling ───────────────────────────────────────────────────────────
+// ─── Error handling ────────────────────────────────────────────────────────────
 
 app.use(notFound);
 app.use(errorHandler);
 
-// ─── Start ────────────────────────────────────────────────────────────────────
+// ─── Start ─────────────────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
   console.log(`🏴‍☠️ BountyHive API running on port ${PORT}`);
   console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Database: ${process.env.DATABASE_URL ? 'configured' : 'missing'}`);
+  console.log(`   CORS: ${ALLOW_ALL ? 'allow all' : ALLOWED_ORIGINS.join(', ')}`);
 });
 
 startIndexer(prisma).catch(console.error);

@@ -3,30 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import { WalletButton } from '../components/WalletButton';
 import { BountyCard } from '../components/BountyCard';
 import { useWalletStore } from '../stores/walletStore';
+import { useUserStore } from '../stores/userStore';
 import { api, mapBounty } from '../api/client';
 import { Bounty } from '../types/bounty';
 
 export function MyBountiesPage() {
   const navigate = useNavigate();
   const { address, connected } = useWalletStore();
+  const { userId } = useUserStore();
   const [tab, setTab] = useState<'created' | 'submitted'>('created');
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!address) {
+    // Use userId (DB cuid) for API calls, not wallet address
+    const id = userId;
+    if (!id) {
       setBounties([]);
       setLoading(false);
       return;
     }
     setLoading(true);
+    setError(null);
     if (tab === 'created') {
-      api.getUserBounties(address)
+      api.getUserBounties(id)
         .then((res) => setBounties(res.bounties.map(mapBounty)))
-        .catch(() => setBounties([]))
+        .catch((err) => { setError(err.message); setBounties([]); })
         .finally(() => setLoading(false));
     } else {
-      api.getUserSubmissions(address)
+      api.getUserSubmissions(id)
         .then(async (res) => {
           const fetched: Bounty[] = [];
           for (const s of res.submissions) {
@@ -39,10 +45,10 @@ export function MyBountiesPage() {
           }
           setBounties(fetched);
         })
-        .catch(() => setBounties([]))
+        .catch((err) => { setError(err.message); setBounties([]); })
         .finally(() => setLoading(false));
     }
-  }, [address, tab]);
+  }, [userId, tab]);
 
   const tabButtonClass = (isActive: boolean) =>
     'flex-1 py-2 rounded-lg text-sm font-medium transition-colors ' +
@@ -93,6 +99,11 @@ export function MyBountiesPage() {
                 <div className="h-5 bg-[var(--border)] rounded w-1/3" />
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-400 mb-2">{error}</p>
+            <button onClick={() => window.location.reload()} className="btn-secondary">Retry</button>
           </div>
         ) : bounties.length === 0 ? (
           <div className="text-center py-12">

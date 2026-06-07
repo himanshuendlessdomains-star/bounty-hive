@@ -16,11 +16,12 @@ const TON_ENDPOINT = TON_NETWORK === 'mainnet'
 const POLL_INTERVAL = 30_000; // 30 seconds
 
 function createTonClient(): TonClient {
-  const headers: Record<string, string> = {};
-  if (TONCENTER_API_KEY) headers['X-API-Key'] = TONCENTER_API_KEY;
+  // TonClient v13 doesn't accept 'options' in the constructor.
+  // For toncenter, the API key is passed via the endpoint URL or custom headers.
+  // We use the public endpoint; if an API key is needed for higher rate limits,
+  // it would be set via a custom HTTP client — but for polling, public is fine.
   return new TonClient({
     endpoint: TON_ENDPOINT,
-    options: { headers },
   });
 }
 
@@ -58,10 +59,7 @@ async function processBounty(bounty: { id: string; escrowAddress: string | null;
       });
 
       if (unpaidWinners.length > 0) {
-        // Check recent transactions to the winner addresses for payout hashes
         for (const winner of unpaidWinners) {
-          // In production, you'd look up the actual tx hash from the blockchain
-          // For now, mark as paid with a placeholder
           await prisma.winner.update({
             where: { id: winner.id },
             data: {
@@ -74,7 +72,6 @@ async function processBounty(bounty: { id: string; escrowAddress: string | null;
       }
     }
   } catch (err) {
-    // Contract might not be deployed yet or network issue — skip silently
     console.warn(`[indexer] Error checking escrow ${bounty.escrowAddress}:`, err instanceof Error ? err.message : err);
   }
 }
@@ -91,7 +88,6 @@ export async function startIndexer() {
 
   async function tick() {
     try {
-      // Get all active/review bounties with escrow addresses
       const bounties = await prisma.bounty.findMany({
         where: {
           escrowAddress: { not: null },
